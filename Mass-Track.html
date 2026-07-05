@@ -801,7 +801,7 @@ function renderChart(){
       if(v==null)return;
       ctx.fillStyle=mDef.color;
       const y=yPos(v),h=yPos(vMin)-y;
-      ctx.beginPath();ctx.roundRect(xBar(i)+barW()*0.15,y,bw,h,3);ctx.fill();
+      ctx.fillRect(xBar(i)+barW()*0.15,y,bw,h);
     });
   } else if(currentChartType==='stacked'){
     const bw=barW();
@@ -812,7 +812,7 @@ function renderChart(){
         if(!v)return;
         ctx.fillStyle=c;
         const y=yPos(base+v),h=yPos(base)-y;
-        ctx.beginPath();ctx.roundRect(x,y,bw,h,2);ctx.fill();
+        ctx.fillRect(x,y,bw,h);
         base+=v;
       });
     });
@@ -821,7 +821,7 @@ function renderChart(){
     rateVals.forEach((v,i)=>{
       ctx.fillStyle=v<=0?p.green:p.accent;
       const y=v<=0?yPos(v):yPos(0),h=Math.abs(yPos(0)-yPos(v));
-      ctx.beginPath();ctx.roundRect(xBar(i)+bw*0.15,y,bw,Math.max(2,h),3);ctx.fill();
+      ctx.fillRect(xBar(i)+bw*0.15,y,bw,Math.max(2,h));
     });
   } else {
     // Line / Area / Scatter / Combo
@@ -836,7 +836,7 @@ function renderChart(){
         if(v==null)return;
         ctx.fillStyle=mDef.color+'99';
         const y=yPos(v),h=yPos(vMin)-y;
-        ctx.beginPath();ctx.roundRect(xBar(i)+bw*0.15,y,bw,h,2);ctx.fill();
+        ctx.fillRect(xBar(i)+bw*0.15,y,bw,h);
       });
     }
 
