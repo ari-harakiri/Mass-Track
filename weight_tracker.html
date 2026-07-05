@@ -43,23 +43,22 @@ if('serviceWorker' in navigator) {
 }
 
 // ── Chart.js self-caching loader ─────────────────────────
-// Fetches Chart.js once, stores it in localStorage, and uses
-// the cached copy on all future loads — works offline after first visit.
 (function(){
   const CKEY = 'wt_chartjs_v440';
   const CDN  = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+  const CDN2 = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
 
-  function loadScript(src) {
-    return new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.onload = res; s.onerror = rej; s.src = src;
-      document.head.appendChild(s);
-    });
-  }
   function execCached(code) {
     const s = document.createElement('script');
-    s.textContent = code;
-    document.head.appendChild(s);
+    s.textContent = code; document.head.appendChild(s);
+  }
+  function showLoading(msg) {
+    const r = document.getElementById('root');
+    if(r) r.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px;font-family:system-ui;color:#555;text-align:center;padding:20px;">
+      <div style="font-size:32px;">⚖️</div>
+      <div style="font-size:16px;font-weight:700;">${msg}</div>
+      <div style="font-size:12px;color:#888;">Weight Tracker is loading…</div>
+    </div>`;
   }
 
   const cached = localStorage.getItem(CKEY);
@@ -68,8 +67,10 @@ if('serviceWorker' in navigator) {
     window._chartReady = true;
   } else {
     document.addEventListener('DOMContentLoaded', () => {
-      fetch(CDN)
-        .then(r => r.text())
+      showLoading('Loading chart library…');
+      const tryFetch = (url) => fetch(url).then(r => { if(!r.ok) throw new Error(); return r.text(); });
+      tryFetch(CDN)
+        .catch(() => tryFetch(CDN2))
         .then(code => {
           try { localStorage.setItem(CKEY, code); } catch(e) {}
           execCached(code);
@@ -77,11 +78,13 @@ if('serviceWorker' in navigator) {
           if(typeof window._onChartReady === 'function') window._onChartReady();
         })
         .catch(() => {
-          // Fallback: load from CDN normally
-          loadScript(CDN).then(() => {
-            window._chartReady = true;
-            if(typeof window._onChartReady === 'function') window._onChartReady();
-          });
+          const r = document.getElementById('root');
+          if(r) r.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:12px;font-family:system-ui;color:#555;text-align:center;padding:30px;">
+            <div style="font-size:32px;">📶</div>
+            <div style="font-size:17px;font-weight:800;color:#111;">Internet needed for first load</div>
+            <div style="font-size:13px;line-height:1.6;">Connect to WiFi or mobile data, then refresh the page. After the first load it will work offline forever.</div>
+            <button onclick="location.reload()" style="margin-top:8px;background:#1d4ed8;color:#fff;border:2px solid #111;border-radius:10px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;">↺ Retry</button>
+          </div>`;
         });
     });
   }
