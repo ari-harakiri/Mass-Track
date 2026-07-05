@@ -2,1135 +2,815 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Mass Track</title>
 <style>
-:root{
-  --bg:#fef08a; --text:#111; --text-muted:#555; --text-faint:#888;
-  --main:#1d4ed8; --accent:#dc2626; --trend:#dc2626; --goal:#f59e0b;
-  --card:#fff; --card2:#fef9c3; --border:#111; --shadow:#111;
-  --green:#16a34a; --purple:#7c3aed;
-  --btn-text:#fff; --tab-active:#dc2626; --del:#dc2626;
-  --section-label:#dc2626; --inp-bg:#fef9c3;
-}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);font-family:system-ui,sans-serif;color:var(--text);min-height:100vh;}
+:root{
+  --bg:#fef08a;--text:#111;--muted:#555;--faint:#888;
+  --main:#1d4ed8;--accent:#dc2626;--trend:#dc2626;--goal-c:#f59e0b;
+  --card:#fff;--inp:#fef9c3;--border:#111;--shadow:#111;
+  --green:#16a34a;--purple:#7c3aed;--btntxt:#fff;--tab:#dc2626;--del:#dc2626;
+}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh;}
 .wrap{max-width:480px;margin:0 auto;padding:20px 16px 60px;}
-.card{background:var(--card);border:3px solid var(--border);border-radius:16px;box-shadow:4px 4px 0 var(--shadow);padding:16px;margin-bottom:14px;}
-.card-blue{background:var(--main);border:3px solid var(--border);border-radius:16px;box-shadow:4px 4px 0 var(--shadow);padding:14px 18px;margin-bottom:14px;}
-input,select,textarea,button{font-family:inherit;}
-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
-.inp{background:var(--inp-bg);border:2px solid var(--border);border-radius:9px;color:var(--text);padding:9px 12px;font-size:14px;outline:none;width:100%;}
-.btn{background:var(--main);color:var(--btn-text);border:2px solid var(--border);border-radius:9px;padding:10px 16px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:2px 2px 0 var(--shadow);width:100%;display:block;text-align:center;}
-.btn-red{background:var(--accent)!important;}
-.btn-green{background:var(--green)!important;}
-.btn-yellow{background:var(--bg)!important;color:var(--text)!important;}
+.card{background:var(--card);border:3px solid var(--border);border-radius:14px;box-shadow:4px 4px 0 var(--shadow);padding:16px;margin-bottom:14px;}
+.card-main{background:var(--main);border:3px solid var(--border);border-radius:14px;box-shadow:4px 4px 0 var(--shadow);padding:14px 18px;margin-bottom:14px;}
+input,select,button,textarea{font-family:inherit;}
+.inp{background:var(--inp);border:2px solid var(--border);border-radius:9px;color:var(--text);padding:9px 12px;font-size:14px;outline:none;width:100%;}
+.btn{background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px 16px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:2px 2px 0 var(--shadow);width:100%;display:block;text-align:center;}
 .btn-sm{padding:6px 12px;font-size:12px;width:auto;display:inline-block;}
-.row2{display:flex;gap:8px;margin-bottom:8px;align-items:stretch;}
-.row2 .inp{flex:1;}
-.tabs{display:flex;background:var(--card);border:3px solid var(--border);border-radius:14px;padding:4px;margin-bottom:16px;gap:4px;box-shadow:4px 4px 0 var(--shadow);}
-.tab{flex:1;padding:7px 2px;border-radius:10px;border:2px solid transparent;cursor:pointer;font-weight:700;font-size:10px;background:transparent;color:var(--text-muted);}
-.tab.active{background:var(--tab-active);color:#fff;border-color:var(--border);}
-.pane{display:none;}.pane.active{display:block;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.scard{border:3px solid var(--border);border-radius:14px;padding:12px 14px;box-shadow:3px 3px 0 var(--shadow);}
-.scard-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;}
-.scard-val{font-size:18px;font-weight:800;}
+.btn-red{background:var(--accent)!important;}
+.btn-green{background:var(--green)!important;color:#fff!important;}
+.btn-yellow{background:var(--bg)!important;color:var(--text)!important;}
+.row{display:flex;gap:8px;margin-bottom:8px;}
+.row .inp{flex:1;}
+.tabs{display:flex;background:var(--card);border:3px solid var(--border);border-radius:12px;padding:4px;gap:4px;box-shadow:4px 4px 0 var(--shadow);margin-bottom:16px;}
+.tab{flex:1;padding:7px 2px;border-radius:9px;border:2px solid transparent;cursor:pointer;font-weight:700;font-size:10px;background:transparent;color:var(--muted);}
+.tab.on{background:var(--tab);color:#fff;border-color:var(--border);}
+.pane{display:none;}.pane.on{display:block;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.sc{border:3px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:3px 3px 0 var(--shadow);}
 .entry{background:var(--card);border:3px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;box-shadow:3px 3px 0 var(--shadow);}
-.del{background:var(--del);border:2px solid var(--border);color:#fff;cursor:pointer;font-size:14px;font-weight:700;padding:4px 10px;border-radius:8px;flex-shrink:0;}
-.section-label{font-size:12px;color:var(--section-label);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.del{background:var(--del);border:2px solid var(--border);color:#fff;cursor:pointer;font-size:14px;font-weight:700;padding:4px 10px;border-radius:8px;}
+.sec{font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
 .err{color:var(--accent);font-size:12px;font-weight:600;margin-bottom:8px;display:none;}
-.chip{background:var(--inp-bg);border:2px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;}
-.chip-label{font-size:10px;color:var(--text-faint);text-transform:uppercase;font-weight:700;}
-.chip-val{font-size:16px;font-weight:800;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
-.chart-wrap{position:relative;height:240px;margin-bottom:10px;}
-canvas{max-width:100%;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
+.chip{background:var(--inp);border:2px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;}
+.chip-l{font-size:10px;color:var(--faint);text-transform:uppercase;font-weight:700;}
+.chip-v{font-size:16px;font-weight:800;}
+.chart-box{height:240px;margin-bottom:10px;position:relative;}
+canvas{display:block;width:100%!important;}
+.legend{display:flex;gap:12px;padding-left:4px;margin-top:6px;}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);}
+.ld{width:10px;height:10px;border-radius:2px;}
 .ttime{display:flex;border:2px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:2px 2px 0 var(--shadow);flex-shrink:0;}
-.ttime button{flex:1;padding:9px 14px;border:none;cursor:pointer;font-size:18px;background:var(--inp-bg);}
-.ttime button.am{background:var(--goal);}
+.ttime button{flex:1;padding:9px 14px;border:none;cursor:pointer;font-size:18px;background:var(--inp);}
+.ttime button.am{background:var(--goal-c);}
 .ttime button.pm{background:var(--main);color:#fff;}
-.metric-tabs{display:flex;gap:4px;margin-bottom:8px;}
-.metric-tab{flex:1;padding:7px 4px;border-radius:9px;border:2px solid transparent;cursor:pointer;font-weight:700;font-size:10px;background:var(--card);color:var(--text-muted);}
-.profile-btn{width:100%;background:var(--card);border:3px solid var(--border);border-radius:16px;box-shadow:4px 4px 0 var(--shadow);padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;margin-bottom:12px;}
-.profile-avatar{width:44px;height:44px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
-.heatmap-cell{display:inline-block;border-radius:2px;}
-select.inp{cursor:pointer;}
-.legend{display:flex;gap:12px;margin-top:6px;padding-left:4px;}
-.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);}
-.legend-dot{width:10px;height:10px;border-radius:2px;}
+.mtabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.mtab{padding:6px 10px;border-radius:8px;border:2px solid transparent;cursor:pointer;font-weight:700;font-size:10px;background:var(--card);color:var(--muted);}
+.mtab.on{color:#fff;border-color:var(--border);}
+.ph2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pcrd{border:3px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:3px 3px 0 var(--shadow);}
+.pcrd img{width:100%;aspect-ratio:1;object-fit:cover;display:block;}
+.pinfo{padding:8px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;}
+.pbtn{background:#fff;border:3px solid var(--border);border-radius:14px;box-shadow:4px 4px 0 var(--shadow);padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;width:100%;margin-bottom:12px;}
+.av{width:44px;height:44px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+#editPanel{display:none;margin-bottom:14px;}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-// ═══════════════════════════════════════════════════════════
-// DATA & HELPERS
-// ═══════════════════════════════════════════════════════════
-function ls(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
-function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+// ── storage ──────────────────────────────────────────────
+function gl(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
+function sl(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
-function parseVeSync(text){
-  const lines=text.trim().split('\n');
-  const results=[];
-  for(let i=1;i<lines.length;i++){
-    const raw=lines[i].replace(/^"|"$/g,'');
-    const row=raw.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-    if(row.length<2)continue;
-    const timeStr=row[0].replace(/"/g,'').trim();
-    const weightRaw=row[1].replace(/lb/gi,'').trim();
-    const bmiRaw=row[2]?.trim();
-    const bfRaw=row[3]?.replace(/%/g,'').trim();
-    const visRaw=row[6]?.trim();
-    const musRaw=row[8]?.replace(/%/g,'').trim();
-    const bmrRaw=row[12]?.replace(/kcal/gi,'').trim();
-    const dt=new Date(timeStr);
-    if(isNaN(dt))continue;
-    const date=dt.toISOString().split('T')[0];
-    const weight=parseFloat(weightRaw);
-    if(isNaN(weight))continue;
-    results.push({
-      date, weight:Math.round(weight*10)/10,
-      time:dt.getHours()<12?'morning':'night',
-      bodyFat:bfRaw&&bfRaw!=='--'?parseFloat(bfRaw):null,
-      bmi:bmiRaw&&bmiRaw!=='--'?parseFloat(bmiRaw):null,
-      visceralFat:visRaw&&visRaw!=='--'?parseFloat(visRaw):null,
-      musclePct:musRaw&&musRaw!=='--'?parseFloat(musRaw):null,
-      bmr:bmrRaw&&bmrRaw!=='--'?parseInt(bmrRaw):null,
-      note:'',photo:null,_t:dt.getTime()
-    });
-  }
-  const byDate={};
-  results.forEach(r=>{if(!byDate[r.date]||r._t<byDate[r.date]._t)byDate[r.date]=r;});
-  return Object.values(byDate).map(({_t,...r})=>r);
-}
-
-const IMPORTED = [];
-
-// ═══════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════
-const COLORS = ['#1d4ed8','#dc2626','#16a34a','#7c3aed','#f59e0b'];
-const ICONS = ['⭐','🌙','🌸','🔥','💪','🐾','🌊','🎯','🦋','🌈','🍀','⚡','🎵','🏆','🌺','🦊','🐬','❄️','💎','🌻'];
-const MAX_PROFILES = 5;
-
-let profiles = ls('wt_profiles', [{id:'p0',name:'Me',icon:'⭐'}]);
-let currentProfile = null;
-let currentTab = 'chart';
-let currentMetric = 'weight';
-let currentChartType = 'line';
-let currentTime = 'morning';
-let chartInstance = null;
-let dateRangeFrom = '';
-let dateRangeTo = '';
-let dateRangePreset = 'all';
-let currentPalette = 'primary';
-
-const PALETTES = {
-  primary:  { name:'🟡 Primary',    bg:'#fef08a', text:'#111', textMuted:'#555', textFaint:'#888', main:'#1d4ed8', accent:'#dc2626', trend:'#dc2626', goal:'#f59e0b', card:'#fff', card2:'#fef9c3', border:'#111', shadow:'#111', green:'#16a34a', purple:'#7c3aed', btnText:'#fff', tabActive:'#dc2626', del:'#dc2626', sectionLabel:'#dc2626', inpBg:'#fef9c3' },
-  sunset:   { name:'🌅 Sunset',     bg:'#431407', text:'#fed7aa', textMuted:'#fb923c', textFaint:'#f97316', main:'#f97316', accent:'#e11d48', trend:'#fbbf24', goal:'#fbbf24', card:'#7c2d12', card2:'#9a3412', border:'#fb923c', shadow:'#431407', green:'#10b981', purple:'#c084fc', btnText:'#fff', tabActive:'#e11d48', del:'#e11d48', sectionLabel:'#fb923c', inpBg:'#9a3412' },
-  ocean:    { name:'🌊 Ocean',      bg:'#ecfeff', text:'#164e63', textMuted:'#0e7490', textFaint:'#0891b2', main:'#0891b2', accent:'#0e7490', trend:'#6366f1', goal:'#34d399', card:'#fff', card2:'#cffafe', border:'#0891b2', shadow:'#164e63', green:'#34d399', purple:'#6366f1', btnText:'#fff', tabActive:'#0891b2', del:'#0e7490', sectionLabel:'#0891b2', inpBg:'#cffafe' },
-  forest:   { name:'🌲 Forest',     bg:'#f0fdf4', text:'#14532d', textMuted:'#166534', textFaint:'#16a34a', main:'#16a34a', accent:'#15803d', trend:'#84cc16', goal:'#fbbf24', card:'#fff', card2:'#dcfce7', border:'#16a34a', shadow:'#14532d', green:'#15803d', purple:'#84cc16', btnText:'#fff', tabActive:'#16a34a', del:'#15803d', sectionLabel:'#16a34a', inpBg:'#dcfce7' },
-  midnight: { name:'🌙 Midnight',   bg:'#0f172a', text:'#f1f5f9', textMuted:'#94a3b8', textFaint:'#64748b', main:'#818cf8', accent:'#f472b6', trend:'#34d399', goal:'#fbbf24', card:'#1e293b', card2:'#334155', border:'#334155', shadow:'#0f172a', green:'#34d399', purple:'#f472b6', btnText:'#fff', tabActive:'#818cf8', del:'#f472b6', sectionLabel:'#818cf8', inpBg:'#334155' },
-  rose:     { name:'🌸 Rose',       bg:'#fff1f2', text:'#881337', textMuted:'#be123c', textFaint:'#e11d48', main:'#e11d48', accent:'#be123c', trend:'#9333ea', goal:'#f59e0b', card:'#fff', card2:'#ffe4e6', border:'#e11d48', shadow:'#881337', green:'#10b981', purple:'#9333ea', btnText:'#fff', tabActive:'#e11d48', del:'#be123c', sectionLabel:'#e11d48', inpBg:'#ffe4e6' },
-  mono:     { name:'🖤 Monochrome', bg:'#f5f5f5', text:'#111', textMuted:'#555', textFaint:'#888', main:'#111', accent:'#333', trend:'#888', goal:'#aaa', card:'#fff', card2:'#e5e5e5', border:'#111', shadow:'#111', green:'#333', purple:'#555', btnText:'#fff', tabActive:'#111', del:'#333', sectionLabel:'#333', inpBg:'#e5e5e5' },
-  soviet:   { name:'☭ Soviet',      bg:'#b91c1c', text:'#fef08a', textMuted:'#fde047', textFaint:'#fbbf24', main:'#fef08a', accent:'#fde047', trend:'#fff', goal:'#fff', card:'#991b1b', card2:'#7f1d1d', border:'#fef08a', shadow:'#7f1d1d', green:'#fde047', purple:'#fbbf24', btnText:'#7f1d1d', tabActive:'#fef08a', del:'#fde047', sectionLabel:'#fef08a', inpBg:'#7f1d1d' },
-  retro:    { name:'💻 Retro',      bg:'#0d0d0d', text:'#00ff41', textMuted:'#00cc33', textFaint:'#009922', main:'#00ff41', accent:'#00cc33', trend:'#00ff41', goal:'#00aa22', card:'#0a1a0a', card2:'#0d1f0d', border:'#00ff41', shadow:'#003311', green:'#00aa22', purple:'#00cc33', btnText:'#0d0d0d', tabActive:'#00ff41', del:'#00cc33', sectionLabel:'#00ff41', inpBg:'#0d1f0d' },
+// ── palette ───────────────────────────────────────────────
+const PAL={
+  primary: {name:'🟡 Primary',  bg:'#fef08a',text:'#111',muted:'#555',faint:'#888',main:'#1d4ed8',accent:'#dc2626',trend:'#dc2626',goalc:'#f59e0b',card:'#fff',inp:'#fef9c3',border:'#111',shadow:'#111',green:'#16a34a',purple:'#7c3aed',btntxt:'#fff',tab:'#dc2626',del:'#dc2626'},
+  sunset:  {name:'🌅 Sunset',   bg:'#431407',text:'#fed7aa',muted:'#fb923c',faint:'#f97316',main:'#f97316',accent:'#e11d48',trend:'#fbbf24',goalc:'#fbbf24',card:'#7c2d12',inp:'#9a3412',border:'#fb923c',shadow:'#7c2d12',green:'#10b981',purple:'#c084fc',btntxt:'#fff',tab:'#e11d48',del:'#e11d48'},
+  ocean:   {name:'🌊 Ocean',    bg:'#ecfeff',text:'#164e63',muted:'#0e7490',faint:'#0891b2',main:'#0891b2',accent:'#0e7490',trend:'#6366f1',goalc:'#34d399',card:'#fff',inp:'#cffafe',border:'#0891b2',shadow:'#164e63',green:'#34d399',purple:'#6366f1',btntxt:'#fff',tab:'#0891b2',del:'#0e7490'},
+  forest:  {name:'🌲 Forest',   bg:'#f0fdf4',text:'#14532d',muted:'#166534',faint:'#16a34a',main:'#16a34a',accent:'#15803d',trend:'#84cc16',goalc:'#fbbf24',card:'#fff',inp:'#dcfce7',border:'#16a34a',shadow:'#14532d',green:'#15803d',purple:'#84cc16',btntxt:'#fff',tab:'#16a34a',del:'#15803d'},
+  midnight:{name:'🌙 Midnight', bg:'#0f172a',text:'#f1f5f9',muted:'#94a3b8',faint:'#64748b',main:'#818cf8',accent:'#f472b6',trend:'#34d399',goalc:'#fbbf24',card:'#1e293b',inp:'#334155',border:'#334155',shadow:'#0f172a',green:'#34d399',purple:'#f472b6',btntxt:'#fff',tab:'#818cf8',del:'#f472b6'},
+  rose:    {name:'🌸 Rose',     bg:'#fff1f2',text:'#881337',muted:'#be123c',faint:'#e11d48',main:'#e11d48',accent:'#be123c',trend:'#9333ea',goalc:'#f59e0b',card:'#fff',inp:'#ffe4e6',border:'#e11d48',shadow:'#881337',green:'#10b981',purple:'#9333ea',btntxt:'#fff',tab:'#e11d48',del:'#be123c'},
+  mono:    {name:'🖤 Mono',     bg:'#f5f5f5',text:'#111',muted:'#555',faint:'#888',main:'#111',accent:'#333',trend:'#888',goalc:'#aaa',card:'#fff',inp:'#e5e5e5',border:'#111',shadow:'#111',green:'#333',purple:'#555',btntxt:'#fff',tab:'#111',del:'#333'},
+  soviet:  {name:'☭ Soviet',   bg:'#b91c1c',text:'#fef08a',muted:'#fde047',faint:'#fbbf24',main:'#fef08a',accent:'#fde047',trend:'#fff',goalc:'#fff',card:'#991b1b',inp:'#7f1d1d',border:'#fef08a',shadow:'#7f1d1d',green:'#fde047',purple:'#fbbf24',btntxt:'#7f1d1d',tab:'#fef08a',del:'#fde047'},
+  retro:   {name:'💻 Retro',   bg:'#0d0d0d',text:'#00ff41',muted:'#00cc33',faint:'#009922',main:'#00ff41',accent:'#00cc33',trend:'#00ff41',goalc:'#00aa22',card:'#0a1a0a',inp:'#0d1f0d',border:'#00ff41',shadow:'#003311',green:'#00aa22',purple:'#00cc33',btntxt:'#0d0d0d',tab:'#00ff41',del:'#00cc33'},
 };
+const COLORS=['#1d4ed8','#dc2626','#16a34a','#7c3aed','#f59e0b'];
+const ICONS=['⭐','🌙','🌸','🔥','💪','🐾','🌊','🎯','🦋','🌈','🍀','⚡','🎵','🏆','🌺','🦊','🐬','❄️','💎','🌻'];
+const MAX=5;
 
-function pal(){ return PALETTES[currentPalette] || PALETTES.primary; }
+// ── state ─────────────────────────────────────────────────
+let profiles=gl('wt_profiles',[{id:'p0',name:'Me',icon:'⭐',palette:'primary'}]);
+let profile=null;
+let palette='primary';
+let tab='chart';
+let metric='weight';
+let ctype='line';
+let ctime='morning';
+let dfrom='';
+let dto='';
+let dpreset='all';
+let chartInst=null;
 
-function pk(k){ return `wt_${currentProfile.id}_${k}`; }
-function getEntries(){ return ls(pk('entries'), currentProfile.id==='p0'?IMPORTED:[]); }
-function getMeas(){ return ls(pk('meas'),[]); }
-function getGoal(){ return ls(pk('goal'),150); }
-function getBfGoal(){ return ls(pk('bfgoal'),25); }
-function saveEntries(e){ ss(pk('entries'),e); }
-function saveMeas(m){ ss(pk('meas'),m); }
-function saveGoal(g){ ss(pk('goal'),g); }
-function saveBfGoal(g){ ss(pk('bfgoal'),g); }
+function pk(k){return'wt_'+profile.id+'_'+k;}
+function gE(){return gl(pk('entries'),[]);}
+function gM(){return gl(pk('meas'),[]);}
+function gG(){return gl(pk('goal'),150);}
+function gB(){return gl(pk('bfgoal'),25);}
+function sE(v){sl(pk('entries'),v);}
+function sM(v){sl(pk('meas'),v);}
+function sG(v){sl(pk('goal'),v);}
+function sB(v){sl(pk('bfgoal'),v);}
 
-function sorted(entries){ return [...entries].sort((a,b)=>a.date.localeCompare(b.date)); }
+function p(){return PAL[palette]||PAL.primary;}
 
-function filteredSorted(entries){
-  let s = sorted(entries);
-  if(dateRangePreset !== 'all' && dateRangePreset !== 'custom') {
-    const now = new Date();
-    const days = {week:7,month:30,three:90,six:180,year:365}[dateRangePreset];
-    if(days){
-      const from = new Date(now); from.setDate(from.getDate()-days);
-      const fromStr = from.toISOString().split('T')[0];
-      s = s.filter(e => e.date >= fromStr);
-    }
-  } else if(dateRangePreset === 'custom') {
-    if(dateRangeFrom) s = s.filter(e => e.date >= dateRangeFrom);
-    if(dateRangeTo)   s = s.filter(e => e.date <= dateRangeTo);
+function sorted(e){return[...e].sort((a,b)=>a.date.localeCompare(b.date));}
+
+function filtered(e){
+  let s=sorted(e);
+  if(dpreset==='custom'){
+    if(dfrom)s=s.filter(x=>x.date>=dfrom);
+    if(dto)s=s.filter(x=>x.date<=dto);
+  } else if(dpreset!=='all'){
+    const days={week:7,month:30,three:90,six:180,year:365}[dpreset];
+    if(days){const f=new Date();f.setDate(f.getDate()-days);const fs=f.toISOString().split('T')[0];s=s.filter(x=>x.date>=fs);}
   }
   return s;
 }
 
-function movingAvg(data, key, w=5){
+function mavg(data,key,w=5){
   return data.map((d,i)=>{
     const sl=data.slice(Math.max(0,i-w+1),i+1).filter(x=>x[key]!=null);
-    if(!sl.length)return {...d,[key+'Trend']:null};
-    return {...d,[key+'Trend']:parseFloat((sl.reduce((s,x)=>s+x[key],0)/sl.length).toFixed(2))};
+    return Object.assign({},d,{[key+'T']:sl.length?parseFloat((sl.reduce((s,x)=>s+x[key],0)/sl.length).toFixed(2)):null});
   });
 }
 
 function bmiCat(b){
-  if(!b)return null; const n=parseFloat(b);
-  if(n<18.5)return{label:'Underweight',color:'#3b82f6'};
-  if(n<25)return{label:'Normal',color:'#16a34a'};
-  if(n<30)return{label:'Overweight',color:'#f59e0b'};
-  return{label:'Obese',color:'#dc2626'};
+  if(!b)return null;const n=parseFloat(b);
+  if(n<18.5)return{l:'Underweight',c:'#3b82f6'};
+  if(n<25)return{l:'Normal',c:'#16a34a'};
+  if(n<30)return{l:'Overweight',c:'#f59e0b'};
+  return{l:'Obese',c:'#dc2626'};
 }
-function bfCat(bf){
-  if(!bf)return null; const n=parseFloat(bf);
-  if(n<14)return{label:'Essential',color:'#3b82f6'};
-  if(n<21)return{label:'Athletic',color:'#16a34a'};
-  if(n<25)return{label:'Fitness',color:'#84cc16'};
-  if(n<32)return{label:'Average',color:'#f59e0b'};
-  return{label:'Obese',color:'#dc2626'};
+function bfCat(b){
+  if(!b)return null;const n=parseFloat(b);
+  if(n<14)return{l:'Essential',c:'#3b82f6'};
+  if(n<21)return{l:'Athletic',c:'#16a34a'};
+  if(n<25)return{l:'Fitness',c:'#84cc16'};
+  if(n<32)return{l:'Average',c:'#f59e0b'};
+  return{l:'Obese',c:'#dc2626'};
 }
-function fmtDate(d){ const[,m,day]=d.split('-'); return m+'/'+day; }
+function fd(d){const[,m,day]=d.split('-');return m+'/'+day;}
 
-function getMetricDefs(){ const p=pal(); return {
-  weight:     {label:'⚖️ Weight',   color:p.main,   unit:'lbs'},
-  bodyFat:    {label:'🔥 Body Fat', color:p.purple, unit:'%'},
-  musclePct:  {label:'💪 Muscle',   color:p.green,  unit:'%'},
-  visceralFat:{label:'🫀 Visceral', color:p.accent, unit:''},
-};}
+const MDEFS={
+  weight:    {lbl:'⚖️ Weight',  unit:'lbs'},
+  bodyFat:   {lbl:'🔥 Body Fat',unit:'%'},
+  musclePct: {lbl:'💪 Muscle',  unit:'%'},
+  visceralFat:{lbl:'🫀 Visceral',unit:''},
+};
 
-// ═══════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════
-function render(){
-  const p=pal();
-  const r=document.documentElement;
-  r.style.setProperty('--bg',       p.bg);
-  r.style.setProperty('--text',     p.text);
-  r.style.setProperty('--text-muted', p.textMuted);
-  r.style.setProperty('--text-faint', p.textFaint);
-  r.style.setProperty('--main',     p.main);
-  r.style.setProperty('--accent',   p.accent);
-  r.style.setProperty('--trend',    p.trend);
-  r.style.setProperty('--goal',     p.goal);
-  r.style.setProperty('--card',     p.card);
-  r.style.setProperty('--card2',    p.card2);
-  r.style.setProperty('--border',   p.border);
-  r.style.setProperty('--shadow',   p.shadow);
-  r.style.setProperty('--green',    p.green);
-  r.style.setProperty('--purple',   p.purple);
-  r.style.setProperty('--btn-text', p.btnText);
-  r.style.setProperty('--tab-active', p.tabActive);
-  r.style.setProperty('--del',      p.del);
-  r.style.setProperty('--section-label', p.sectionLabel);
-  r.style.setProperty('--inp-bg',   p.inpBg);
-  document.body.style.background = p.bg;
-  document.body.style.color = p.text;
-  document.getElementById('root').innerHTML = currentProfile ? renderTracker() : renderProfiles();
-  bindEvents();
-  if(currentProfile && currentTab==='chart') renderChart();
-}
-
-// ── PROFILES ─────────────────────────────────────────────
-function renderProfiles(){
-  const saveLS_count = (id) => {
-    try{ const e=JSON.parse(localStorage.getItem(`wt_${id}_entries`)); return e?`${e.length} readings`:'No data yet'; }catch{ return 'No data yet'; }
+// ── apply palette ─────────────────────────────────────────
+function applyPal(){
+  const q=p(),r=document.documentElement;
+  const m={
+    '--bg':q.bg,'--text':q.text,'--muted':q.muted,'--faint':q.faint,
+    '--main':q.main,'--accent':q.accent,'--trend':q.trend,'--goal-c':q.goalc,
+    '--card':q.card,'--inp':q.inp,'--border':q.border,'--shadow':q.shadow,
+    '--green':q.green,'--purple':q.purple,'--btntxt':q.btntxt,
+    '--tab':q.tab,'--del':q.del
   };
-  return `
-  <div class="wrap">
-    <div style="font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:6px;">Weight Tracker</div>
-    <div style="font-size:28px;font-weight:900;margin-bottom:6px;">Who's tracking?</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">Select a profile to continue.</div>
-    ${profiles.map((p,i)=>`
-      <div style="background:var(--card);border:3px solid var(--border);border-radius:16px;box-shadow:4px 4px 0 var(--shadow);margin-bottom:12px;overflow:hidden;">
-        <div style="display:flex;align-items:center;">
-          <button onclick="selectProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:14px;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left;">
-            <div style="width:44px;height:44px;border-radius:50%;background:${COLORS[i%COLORS.length]};border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${p.icon||'⭐'}</div>
-            <div>
-              <div style="font-size:17px;font-weight:800;">${p.name}</div>
-              <div style="font-size:11px;color:var(--text-faint);">${saveLS_count(p.id)}</div>
-            </div>
-          </button>
-          <div style="display:flex;gap:6px;padding:0 12px;">
-            <button class="btn btn-sm btn-yellow" style="border:2px solid var(--border);" onclick="editProfile('${p.id}')">✏️</button>
-            ${profiles.length>1?`<button class="btn btn-sm btn-red" onclick="deleteProfile('${p.id}')">🗑️</button>`:''}
-          </div>
-        </div>
+  for(const[k,v]of Object.entries(m))r.style.setProperty(k,v);
+  document.body.style.background=q.bg;
+  document.body.style.color=q.text;
+}
+
+// ── stats ─────────────────────────────────────────────────
+function stats(e){
+  const s=sorted(e);if(!s.length)return null;
+  const ws=s.map(x=>x.weight);
+  const bfs=s.map(x=>x.bodyFat).filter(Boolean);
+  const cur=ws[ws.length-1];const last=s[s.length-1];
+  return{
+    cur,min:Math.min(...ws),max:Math.max(...ws),
+    avg:(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1),
+    chg:(cur-ws[0]).toFixed(1),
+    bf:last.bodyFat,bmi:last.bmi,muscle:last.musclePct,
+    visceral:last.visceralFat,bmr:last.bmr,
+    bfMin:bfs.length?Math.min(...bfs).toFixed(1):null,
+    bfMax:bfs.length?Math.max(...bfs).toFixed(1):null,
+    bfChg:bfs.length>1?(last.bodyFat-bfs[0]).toFixed(1):null,
+  };
+}
+
+// ── render ────────────────────────────────────────────────
+function render(){
+  applyPal();
+  document.getElementById('root').innerHTML=profile?renderApp():renderProfiles();
+  if(profile&&tab==='chart')setTimeout(drawChart,0);
+}
+
+// ── profiles page ─────────────────────────────────────────
+function renderProfiles(){
+  const cnt=id=>{try{const e=JSON.parse(localStorage.getItem('wt_'+id+'_entries'));return e?e.length+' readings':'No data';}catch{return'No data';}};
+  return`<div class="wrap">
+  <div style="font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:6px;">Mass Track</div>
+  <div style="font-size:28px;font-weight:900;margin-bottom:6px;">Who's tracking?</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Tap your name to continue.</div>
+  ${profiles.map((q,i)=>`
+    <button class="pbtn" onclick="selProf('${q.id}')">
+      <div class="av" style="background:${COLORS[i%5]};">${q.icon||'⭐'}</div>
+      <div style="text-align:left;">
+        <div style="font-size:17px;font-weight:800;">${q.name}</div>
+        <div style="font-size:11px;color:var(--muted);">${cnt(q.id)}</div>
       </div>
-    `).join('')}
-
-    <div id="editProfilePanel" style="display:none;margin-bottom:14px;" class="card"></div>
-
-    ${profiles.length<MAX_PROFILES?`
-      <button class="btn btn-green" onclick="addProfile()">+ Add person (${profiles.length}/${MAX_PROFILES})</button>
-    `:''}
+      <div style="margin-left:auto;">
+        <button onclick="event.stopPropagation();openEdit('${q.id}')" style="background:var(--inp);border:2px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;">✏️</button>
+        ${profiles.length>1?`<button onclick="event.stopPropagation();delProf('${q.id}')" style="background:var(--del);border:2px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;color:#fff;margin-left:4px;">🗑️</button>`:''}
+      </div>
+    </button>
+  `).join('')}
+  <div class="card" id="editPanel">
+    <div class="sec">Edit Profile</div>
+    <input id="eName" class="inp" placeholder="Name" style="margin-bottom:10px;">
+    <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:6px;">Icon:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="iconPicker"></div>
+    <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:6px;">Theme:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="themePicker"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="saveEdit()">Save</button>
+      <button class="btn btn-sm btn-yellow" style="border:2px solid var(--border);" onclick="closeEdit()">Cancel</button>
+    </div>
+  </div>
+  ${profiles.length<MAX?`<button class="btn btn-green" onclick="addProf()">+ Add person (${profiles.length}/${MAX})</button>`:''}
   </div>`;
 }
 
-// ── TRACKER ───────────────────────────────────────────────
-function renderTracker(){
-  const entries = getEntries();
-  const s = sorted(entries);
-  const goal = getGoal();
-  const bfGoal = getBfGoal();
-  const meas = getMeas();
+// ── main app ──────────────────────────────────────────────
+function renderApp(){
+  const e=gE(),g=gG(),bf=gB(),ms=gM();
+  const s=sorted(e),st=stats(e);
+  const bmiI=st?.bmi?bmiCat(st.bmi):null;
+  const bfI=st?.bf?bfCat(st.bf):null;
+  const toG=st?(st.cur-g).toFixed(1):null;
+  const q=p();
 
-  // Stats
-  let stats = null;
-  if(s.length){
-    const ws=s.map(e=>e.weight);
-    const bfs=s.map(e=>e.bodyFat).filter(Boolean);
-    const cur=ws[ws.length-1];
-    const last=s[s.length-1];
-    stats={
-      current:cur,min:Math.min(...ws),max:Math.max(...ws),
-      avg:(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1),
-      change:(cur-ws[0]).toFixed(1),
-      currentBf:last.bodyFat,currentBmi:last.bmi,
-      currentMuscle:last.musclePct,currentVisceral:last.visceralFat,currentBmr:last.bmr,
-      minBf:bfs.length?Math.min(...bfs).toFixed(1):null,
-      maxBf:bfs.length?Math.max(...bfs).toFixed(1):null,
-      changeBf:bfs.length>1?(last.bodyFat-bfs[0]).toFixed(1):null,
-    };
-  }
-  const bmiInfo = stats?.currentBmi ? bmiCat(stats.currentBmi) : null;
-  const bfInfo  = stats?.currentBf  ? bfCat(stats.currentBf)   : null;
-  const toGoal  = stats ? (stats.current-goal).toFixed(1) : null;
+  return`<div class="wrap">
+  <input type="file" id="csvF" accept=".csv" style="display:none;" onchange="impCSV(this)">
+  <input type="file" id="photoF" accept="image/*" style="display:none;" onchange="upPhoto(this)">
 
-  return `
-  <div class="wrap">
-    <!-- Header -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-      <div>
-        <button onclick="switchUser()" style="background:none;border:none;cursor:pointer;font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:4px;padding:0;">← Profiles</button>
-        <div style="font-size:22px;font-weight:900;margin-bottom:2px;">${currentProfile.name}</div>
-        <div style="font-size:30px;font-weight:900;color:var(--main);letter-spacing:-.03em;">${stats?stats.current+' lbs':'No data yet'}</div>
-        ${stats?`<div style="font-size:13px;color:var(--text-muted);margin-top:2px;">${parseFloat(stats.change)<0?'↓ '+Math.abs(stats.change):'↑ '+stats.change} lbs total${stats.currentBf?' · '+stats.currentBf+'% BF':''}${stats.currentBmr?' · '+stats.currentBmr+' BMR':''}</div>`:''}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
-        <input type="file" id="csvFile" accept=".csv" style="display:none;" onchange="importCSV(this)">
-        <button class="btn btn-green btn-sm" onclick="document.getElementById('csvFile').click()">📥 CSV</button>
-        <button class="btn btn-red btn-sm" onclick="window.print()">🖨️ Print</button>
-      </div>
+  <!-- header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+    <div>
+      <button onclick="goProfiles()" style="background:none;border:none;cursor:pointer;font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;font-weight:700;padding:0;margin-bottom:4px;">← Profiles</button>
+      <div style="font-size:22px;font-weight:900;">${profile.name}</div>
+      <div style="font-size:30px;font-weight:900;color:var(--main);">${st?st.cur+' lbs':'No data yet'}</div>
+      ${st?`<div style="font-size:13px;color:var(--muted);">${parseFloat(st.chg)<0?'↓ '+Math.abs(st.chg):'↑ '+st.chg} lbs${st.bf?' · '+st.bf+'% BF':''}${st.bmr?' · '+st.bmr+' BMR':''}</div>`:''}
     </div>
-
-    <!-- Body Comp Toggle -->
-    <button class="btn btn-yellow" style="border:3px solid var(--border);box-shadow:3px 3px 0 var(--shadow);margin-bottom:10px;font-size:13px;" onclick="toggleBMI()">
-      <span id="bmiArrow">▸</span> Body Composition${stats?.currentBmi?' — BMI '+stats.currentBmi+(bmiInfo?' ('+bmiInfo.label+')':''):''}${stats?.currentBf?' · '+stats.currentBf+'% BF'+(bfInfo?' ('+bfInfo.label+')':''):''}
-    </button>
-    <div id="bmiPanel" style="display:none;">
-      <div class="card">
-        <div class="grid2">
-          ${[
-            {l:'BMI',v:stats?.currentBmi??'—',c:bmiInfo?.color??'#111',sub:bmiInfo?.label},
-            {l:'Body Fat',v:stats?.currentBf?stats.currentBf+'%':'—',c:bfInfo?.color??'#111',sub:bfInfo?.label},
-            {l:'Muscle %',v:stats?.currentMuscle?stats.currentMuscle+'%':'—',c:p.green,sub:null},
-            {l:'Visceral',v:stats?.currentVisceral??'—',c:stats?.currentVisceral>=10?p.accent:p.goal,sub:stats?.currentVisceral>=10?'High':'Normal'},
-          ].map(({l,v,c,sub})=>`
-            <div style="background:#f8fafc;border:2px solid var(--border);border-radius:12px;padding:12px 14px;">
-              <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${l}</div>
-              <div style="font-size:22px;font-weight:900;color:${c};">${v}</div>
-              ${sub?`<div style="font-size:11px;color:${c};font-weight:600;">${sub}</div>`:''}
-            </div>
-          `).join('')}
-        </div>
-        ${stats?.currentBmi?`
-          <div style="margin-bottom:12px;">
-            <div style="font-size:11px;color:var(--text-faint);font-weight:700;margin-bottom:4px;">BMI Scale</div>
-            <div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 30%,#f59e0b 65%,#dc2626 100%);border:2px solid var(--border);position:relative;">
-              <div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(stats.currentBmi)-15)/25)*100))}%;width:10px;height:18px;background:#111;border-radius:3px;transform:translateX(-50%);"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-faint);margin-top:2px;"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div>
-          </div>`:''}
-        ${stats?.currentBf?`
-          <div>
-            <div style="font-size:11px;color:var(--text-faint);font-weight:700;margin-bottom:4px;">Body Fat Scale (Female)</div>
-            <div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 25%,#84cc16 45%,#f59e0b 70%,#dc2626 100%);border:2px solid var(--border);position:relative;">
-              <div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(stats.currentBf)-10)/35)*100))}%;width:10px;height:18px;background:#111;border-radius:3px;transform:translateX(-50%);"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-faint);margin-top:2px;"><span>14%</span><span>21%</span><span>25%</span><span>32%</span><span>45%</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:9px;color:#aaa;"><span>Essential</span><span>Athletic</span><span>Fitness</span><span>Average</span><span>Obese</span></div>
-          </div>`:''}
-      </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+      <button class="btn btn-sm btn-green" onclick="document.getElementById('csvF').click()">📥 CSV</button>
+      <button class="btn btn-sm btn-red" onclick="window.print()">🖨️ Print</button>
     </div>
+  </div>
 
-    <!-- Goal -->
-    <div class="card-blue" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-      <div>
-        <div style="font-size:11px;color:var(--goal);text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:2px;">Goal Weight</div>
-        <div id="goalDisplay" style="font-size:20px;font-weight:800;color:#fff;">${goal} lbs</div>
-        <div id="goalEdit" style="display:none;display:flex;gap:8px;">
-          <input type="number" id="goalInput" value="${goal}" class="inp" style="background:var(--card);width:100px;">
-          <button class="btn btn-sm" style="background:var(--goal);color:var(--text);" onclick="saveGoal()">Save</button>
+  <!-- body comp toggle -->
+  <button onclick="toggleBC()" id="bcBtn" class="btn btn-yellow" style="border:3px solid var(--border);box-shadow:3px 3px 0 var(--shadow);font-size:13px;margin-bottom:10px;">
+    ▸ Body Composition${st?.bmi?' — BMI '+st.bmi+(bmiI?' ('+bmiI.l+')':''):''}${st?.bf?' · '+st.bf+'%':''}
+  </button>
+  <div id="bcPanel" style="display:none;" class="card">
+    <div class="g2" style="margin-bottom:10px;">
+      ${[
+        {l:'BMI',v:st?.bmi??'—',c:bmiI?.c??'var(--main)',sub:bmiI?.l},
+        {l:'Body Fat',v:st?.bf?st.bf+'%':'—',c:bfI?.c??'var(--main)',sub:bfI?.l},
+        {l:'Muscle %',v:st?.muscle?st.muscle+'%':'—',c:q.green,sub:null},
+        {l:'Visceral',v:st?.visceral??'—',c:st?.visceral>=10?q.accent:q.goalc,sub:st?.visceral>=10?'High':'Normal'},
+      ].map(x=>`<div style="background:var(--inp);border:2px solid var(--border);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:10px;color:var(--faint);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${x.l}</div>
+        <div style="font-size:22px;font-weight:900;color:${x.c};">${x.v}</div>
+        ${x.sub?`<div style="font-size:11px;color:${x.c};font-weight:600;">${x.sub}</div>`:''}
+      </div>`).join('')}
+    </div>
+    ${st?.bmi?`<div style="margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;">BMI Scale</div>
+      <div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 30%,#f59e0b 65%,#dc2626 100%);border:2px solid var(--border);position:relative;">
+        <div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(st.bmi)-15)/25)*100))}%;width:10px;height:18px;background:var(--border);border-radius:3px;transform:translateX(-50%);"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px;"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div>
+    </div>`:''}
+    ${st?.bf?`<div>
+      <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;">Body Fat Scale (Female)</div>
+      <div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 25%,#84cc16 45%,#f59e0b 70%,#dc2626 100%);border:2px solid var(--border);position:relative;">
+        <div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(st.bf)-10)/35)*100))}%;width:10px;height:18px;background:var(--border);border-radius:3px;transform:translateX(-50%);"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px;"><span>14%</span><span>21%</span><span>25%</span><span>32%</span><span>45%</span></div>
+    </div>`:''}
+  </div>
+
+  <!-- goal -->
+  <div class="card-main" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div>
+      <div style="font-size:11px;color:var(--goal-c);text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:2px;">Goal Weight</div>
+      <div id="gDisp" style="font-size:20px;font-weight:800;color:#fff;">${g} lbs</div>
+      <div id="gEdit" style="display:none;">
+        <div class="row" style="margin-bottom:0;">
+          <input type="number" id="gInp" value="${g}" class="inp" style="background:#fff;width:100px;flex:0 0 auto;">
+          <button class="btn btn-sm" style="background:var(--goal-c);color:#111;border-color:var(--border);flex:0 0 auto;" onclick="saveGoal()">Save</button>
         </div>
       </div>
-      <div style="text-align:right;">
-        ${toGoal!==null?`<div style="font-size:13px;font-weight:700;color:${parseFloat(toGoal)<=0?'#86efac':p.goal};margin-bottom:4px;">${parseFloat(toGoal)<=0?'🎉 Goal reached!':toGoal+' lbs to go'}</div>`:''}
-        <button class="btn btn-sm btn-yellow" style="border:2px solid var(--border);" onclick="editGoal()">Edit</button>
-      </div>
     </div>
+    <div style="text-align:right;">
+      ${toG!==null?`<div style="font-size:13px;font-weight:700;color:${parseFloat(toG)<=0?'#86efac':'var(--goal-c)'};margin-bottom:4px;">${parseFloat(toG)<=0?'🎉 Goal reached!':toG+' lbs to go'}</div>`:''}
+      <button class="btn btn-sm btn-yellow" style="border:2px solid var(--border);" onclick="editGoal()">Edit</button>
+    </div>
+  </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      ${['chart','stats','log','measurements','photos'].map(t=>`
-        <button class="tab ${currentTab===t?'active':''}" onclick="switchTab('${t}')">${{chart:'Chart',stats:'Stats',log:'Log',measurements:'Measures',photos:'Photos'}[t]}</button>
+  <!-- tabs -->
+  <div class="tabs">
+    ${['chart','stats','log','measures','photos'].map(t=>`<button class="tab ${tab===t?'on':''}" onclick="setTab('${t}')">${{chart:'Chart',stats:'Stats',log:'Log',measures:'Measures',photos:'Photos'}[t]}</button>`).join('')}
+  </div>
+
+  <!-- CHART -->
+  <div class="pane ${tab==='chart'?'on':''}">
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+      ${[['all','All'],['week','7D'],['month','1M'],['three','3M'],['six','6M'],['year','1Y'],['custom','Custom']].map(([k,l])=>`
+        <button onclick="setDP('${k}')" style="padding:5px 10px;border-radius:8px;border:2px solid ${dpreset===k?'var(--border)':'transparent'};cursor:pointer;font-weight:700;font-size:11px;background:${dpreset===k?'var(--main)':'var(--card)'};color:${dpreset===k?'#fff':'var(--muted)'};font-family:inherit;">${l}</button>
       `).join('')}
     </div>
-
-    <!-- CHART TAB -->
-    <div class="pane ${currentTab==='chart'?'active':''}" id="pane-chart">
-
-      <!-- Date range presets -->
-      <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;">
-        ${[['all','All'],['week','7D'],['month','1M'],['three','3M'],['six','6M'],['year','1Y'],['custom','Custom']].map(([k,l])=>`
-          <button onclick="setDatePreset('${k}')" style="padding:5px 10px;border-radius:8px;border:${dateRangePreset===k?`2px solid var(--border)`:'2px solid var(--border)'};cursor:pointer;font-weight:700;font-size:11px;background:${dateRangePreset===k?p.main:p.card};color:${dateRangePreset===k?p.btnText:p.textMuted};font-family:inherit;">${l}</button>
-        `).join('')}
-      </div>
-      ${dateRangePreset==='custom'?`
-        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-          <input type="date" value="${dateRangeFrom}" onchange="setDateFrom(this.value)" class="inp" style="flex:1;">
-          <span style="font-weight:700;color:var(--text-muted);">→</span>
-          <input type="date" value="${dateRangeTo}" onchange="setDateTo(this.value)" class="inp" style="flex:1;">
-        </div>`:''}
-
-      <!-- Metric selector -->
-      <div class="metric-tabs">
-        ${Object.entries(getMetricDefs()).map(([k,m])=>`
-          <button class="metric-tab" style="${currentMetric===k?'background:'+m.color+';color:#fff;border-color:var(--text);box-shadow:2px 2px 0 var(--shadow);':''}" onclick="setMetric('${k}')">${m.label}</button>
-        `).join('')}
-      </div>
-      <!-- Chart type dropdown -->
-      <select class="inp" style="margin-bottom:12px;font-weight:700;font-size:13px;border:3px solid var(--border);border-radius:10px;box-shadow:3px 3px 0 var(--shadow);" onchange="setChartType(this.value)">
-        <option value="line"    ${currentChartType==='line'?'selected':''}>📈 Line</option>
-        <option value="area"    ${currentChartType==='area'?'selected':''}>🏔️ Area</option>
-        <option value="bar"     ${currentChartType==='bar'?'selected':''}>📊 Bar</option>
-        <option value="scatter" ${currentChartType==='scatter'?'selected':''}>✦ Scatter</option>
-        <option value="combo"   ${currentChartType==='combo'?'selected':''}>🔀 Combo (Bar + Trend)</option>
-        <option value="ring"    ${currentChartType==='ring'?'selected':''}>🎯 Progress Ring</option>
-        <option value="heatmap" ${currentChartType==='heatmap'?'selected':''}>🗓️ Heatmap Calendar</option>
-        <option value="stacked" ${currentChartType==='stacked'?'selected':''}>🧱 Stacked Composition</option>
-        <option value="rate"    ${currentChartType==='rate'?'selected':''}>📉 Rate of Change</option>
-      </select>
-
-      ${currentChartType==='ring'?renderRing(filteredSorted(entries),goal,bfGoal,stats):''}
-      ${currentChartType==='heatmap'?renderHeatmap(filteredSorted(entries)):''}
-      ${currentChartType==='stacked'?renderStacked(filteredSorted(entries)):''}
-      ${currentChartType==='rate'?renderRate(filteredSorted(entries)):''}
-      ${['line','area','bar','scatter','combo'].includes(currentChartType)?`
-        <div class="card" style="padding:12px 8px 10px;">
-          <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-          <div class="legend" id="chartLegend"></div>
-        </div>`:''}
+    ${dpreset==='custom'?`<div class="row" style="margin-bottom:8px;">
+      <input type="date" value="${dfrom}" onchange="dfrom=this.value;render();" class="inp">
+      <span style="font-weight:700;color:var(--muted);align-self:center;">→</span>
+      <input type="date" value="${dto}" onchange="dto=this.value;render();" class="inp">
+    </div>`:''}
+    <div class="mtabs">
+      ${Object.entries(MDEFS).map(([k,m])=>`<button class="mtab ${metric===k?'on':''}" style="${metric===k?'background:var(--main);':''}font-family:inherit;" onclick="setMetric('${k}')">${m.lbl}</button>`).join('')}
     </div>
+    <select class="inp" style="margin-bottom:12px;font-weight:700;border:3px solid var(--border);box-shadow:3px 3px 0 var(--shadow);" onchange="ctype=this.value;render();">
+      <option value="line" ${ctype==='line'?'selected':''}>📈 Line</option>
+      <option value="area" ${ctype==='area'?'selected':''}>🏔️ Area</option>
+      <option value="bar"  ${ctype==='bar'?'selected':''}>📊 Bar</option>
+      <option value="scatter" ${ctype==='scatter'?'selected':''}>✦ Scatter</option>
+      <option value="combo" ${ctype==='combo'?'selected':''}>🔀 Combo</option>
+      <option value="ring"  ${ctype==='ring'?'selected':''}>🎯 Progress Ring</option>
+      <option value="heatmap" ${ctype==='heatmap'?'selected':''}>🗓️ Heatmap</option>
+      <option value="stacked" ${ctype==='stacked'?'selected':''}>🧱 Stacked</option>
+      <option value="rate"  ${ctype==='rate'?'selected':''}>📉 Rate of Change</option>
+    </select>
+    ${ctype==='ring'?renderRing(filtered(e),g,bf,st):''}
+    ${ctype==='heatmap'?renderHeatmap(filtered(e)):''}
+    ${['line','area','bar','scatter','combo','stacked','rate'].includes(ctype)?`
+    <div class="card" style="padding:12px 8px 10px;">
+      <div class="chart-box"><canvas id="MC"></canvas></div>
+      <div class="legend" id="LEG"></div>
+    </div>`:''}
+  </div>
 
-    <!-- STATS TAB -->
-    <div class="pane ${currentTab==='stats'?'active':''}" id="pane-stats">
-      ${stats?`
-      <div class="grid2">
+  <!-- STATS -->
+  <div class="pane ${tab==='stats'?'on':''}">
+    ${st?`
+    <div class="g2">
+      ${[
+        {l:'Current',v:st.cur+' lbs',bg:'var(--main)',fg:'#fff',sub:'Goal: '+g+' lbs'},
+        {l:'Lost so far',v:Math.abs(st.chg)+' lbs',bg:'var(--accent)',fg:'#fff',sub:parseFloat(st.chg)<0?'🎉 Amazing!':'Keep going!'},
+        {l:'Lowest',v:st.min+' lbs',bg:'var(--card)',fg:'var(--text)',sub:null},
+        {l:'Highest',v:st.max+' lbs',bg:'var(--card)',fg:'var(--text)',sub:null},
+        {l:'Average',v:st.avg+' lbs',bg:'var(--card)',fg:'var(--text)',sub:null},
+        {l:'To goal',v:Math.max(0,parseFloat(toG))+' lbs',bg:'var(--card)',fg:'var(--text)',sub:null},
+      ].map(x=>`<div class="sc" style="background:${x.bg};color:${x.fg};">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:${x.bg==='var(--card)'?'var(--faint)':'rgba(255,255,255,.7)'};margin-bottom:4px;">${x.l}</div>
+        <div style="font-size:18px;font-weight:800;">${x.v}</div>
+        ${x.sub?`<div style="font-size:11px;">${x.sub}</div>`:''}
+      </div>`).join('')}
+    </div>
+    <div class="card-main">
+      <div style="font-size:11px;color:var(--goal-c);font-weight:700;text-transform:uppercase;margin-bottom:10px;">Body Composition</div>
+      <div class="g2">
         ${[
-          {l:'Current',v:stats.current+' lbs',bg:p.main,fg:'#fff',sub:'Goal: '+goal+' lbs'},
-          {l:'Lost so far',v:Math.abs(stats.change)+' lbs',bg:p.accent,fg:'#fff',sub:parseFloat(stats.change)<0?'🎉 Amazing!':'Keep going!'},
-          {l:'Lowest ever',v:stats.min+' lbs',bg:'#fff',fg:'#111',sub:null},
-          {l:'Highest ever',v:stats.max+' lbs',bg:'#fff',fg:'#111',sub:null},
-          {l:'Average',v:stats.avg+' lbs',bg:'#fff',fg:'#111',sub:null},
-          {l:'To goal',v:Math.max(0,parseFloat(toGoal))+' lbs',bg:'#fff',fg:'#111',sub:null},
-        ].map(({l,v,bg,fg,sub})=>`
-          <div class="scard" style="background:${bg};color:${fg};">
-            <div class="scard-label" style="color:${bg==='#fff'?'#888':'rgba(255,255,255,.7)'};">${l}</div>
-            <div class="scard-val">${v}</div>
-            ${sub?`<div style="font-size:11px;color:${bg==='#fff'?'#888':'rgba(255,255,255,.6)'};">${sub}</div>`:''}
+          {l:'BMI',v:st.bmi??'—',sub:bmiI?.l},{l:'Body Fat',v:st.bf?st.bf+'%':'—',sub:bfI?.l},
+          {l:'Muscle %',v:st.muscle?st.muscle+'%':'—',sub:null},{l:'Visceral Fat',v:st.visceral??'—',sub:null},
+          {l:'BMR',v:st.bmr?st.bmr+' kcal':'—',sub:null},{l:'BF Change',v:st.bfChg?st.bfChg+'%':'—',sub:null},
+        ].map(x=>`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${x.l}</div>
+          <div style="font-size:17px;font-weight:800;color:#fff;">${x.v}</div>
+          ${x.sub?`<div style="font-size:11px;color:var(--goal-c);">${x.sub}</div>`:''}
+        </div>`).join('')}
+      </div>
+    </div>`:'<div class="card" style="text-align:center;color:var(--muted);">No data yet.</div>'}
+  </div>
+
+  <!-- LOG -->
+  <div class="pane ${tab==='log'?'on':''}">
+    <div class="card">
+      <div class="sec">Log Entry</div>
+      <div class="row">
+        <input type="date" id="lDate" class="inp" value="${new Date().toISOString().split('T')[0]}" style="flex:1;">
+        <div class="ttime">
+          <button id="bAM" class="${ctime==='morning'?'am':''}" onclick="setTime('morning')">☀️</button>
+          <button id="bPM" class="${ctime==='night'?'pm':''}" onclick="setTime('night')">🌙</button>
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1;"><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:3px;">⚖️ Weight (lbs)</div><input type="number" id="lWt" class="inp" placeholder="e.g. 165.2"></div>
+        <div style="flex:1;"><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:3px;">🔥 Body Fat %</div><input type="number" id="lBf" class="inp" placeholder="e.g. 32.5"></div>
+      </div>
+      <input type="text" id="lNote" class="inp" placeholder="Note (optional)" style="margin-bottom:8px;">
+      <div id="lErr" class="err"></div>
+      <button class="btn" onclick="addEntry()">Add entry</button>
+    </div>
+    <button class="btn btn-green" style="margin-bottom:14px;" onclick="document.getElementById('csvF').click()">📥 Import VeSync CSV</button>
+    <div id="entList">
+      ${s.length===0?'<div class="card" style="text-align:center;color:var(--muted);">No entries yet.</div>':
+        [...s].reverse().slice(0,50).map(x=>`
+        <div class="entry">
+          <div>
+            <div style="font-size:12px;color:var(--muted);">${x.date} ${x.time==='morning'?'☀️':'🌙'}</div>
+            <div style="font-size:18px;font-weight:800;">${x.weight} lbs${x.bodyFat!=null?`<span style="font-size:13px;color:var(--purple);margin-left:8px;">${x.bodyFat}% BF</span>`:''}</div>
+            ${x.note?`<div style="font-size:12px;color:var(--muted);font-style:italic;">"${x.note}"</div>`:''}
           </div>
+          <button class="del" onclick="delEntry('${x.date}')">✕</button>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- MEASURES -->
+  <div class="pane ${tab==='measures'?'on':''}">
+    <div class="card">
+      <div class="sec">Log Measurements (inches)</div>
+      <input type="date" id="mDate" class="inp" value="${new Date().toISOString().split('T')[0]}" style="margin-bottom:8px;">
+      <div class="g2" style="margin-bottom:8px;">
+        ${['Chest','Waist','Hips','Arms','Thighs'].map(f=>`<input type="number" id="m${f}" class="inp" placeholder="${f}">`).join('')}
+      </div>
+      <button class="btn" onclick="addMeas()">Add measurements</button>
+    </div>
+    ${[...gM()].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`
+    <div class="card">
+      <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}</div>
+      <div class="g3">
+        ${['chest','waist','hips','arms','thighs'].filter(f=>m[f]!=null).map(f=>`
+          <div class="chip"><div class="chip-l">${f}</div><div class="chip-v">${m[f]}"</div></div>
         `).join('')}
       </div>
-      <div class="card-blue">
-        <div style="font-size:11px;color:var(--goal);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Body Composition Now</div>
-        <div class="grid2">
-          ${[
-            {l:'BMI',v:stats.currentBmi??'—',sub:bmiInfo?.label},
-            {l:'Body Fat',v:stats.currentBf?stats.currentBf+'%':'—',sub:bfInfo?.label},
-            {l:'Muscle %',v:stats.currentMuscle?stats.currentMuscle+'%':'—',sub:null},
-            {l:'Visceral Fat',v:stats.currentVisceral??'—',sub:null},
-            {l:'BMR',v:stats.currentBmr?stats.currentBmr+' kcal':'—',sub:null},
-            {l:'BF Change',v:stats.changeBf?stats.changeBf+'%':'—',sub:null},
-          ].map(({l,v,sub})=>`
-            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;">
-              <div style="font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${l}</div>
-              <div style="font-size:17px;font-weight:800;color:#fff;">${v}</div>
-              ${sub?`<div style="font-size:11px;color:var(--goal);">${sub}</div>`:''}
-            </div>
-          `).join('')}
-        </div>
-      </div>`:'<div class="card" style="text-align:center;color:var(--text-faint);">No data yet.</div>'}
-    </div>
+      <button class="del" style="margin-top:10px;font-size:12px;padding:4px 10px;" onclick="delMeas('${m.date}')">Delete</button>
+    </div>`).join('')||'<div class="card" style="text-align:center;color:var(--muted);">No measurements yet.</div>'}
+  </div>
 
-    <!-- LOG TAB -->
-    <div class="pane ${currentTab==='log'?'active':''}" id="pane-log">
-      <div class="card">
-        <div class="section-label">Log Entry</div>
-        <div class="row2">
-          <input type="date" id="logDate" class="inp" value="${new Date().toISOString().split('T')[0]}">
-          <div class="ttime">
-            <button id="btnAM" class="${currentTime==='morning'?'am':''}" onclick="setTime('morning')" title="Morning">☀️</button>
-            <button id="btnPM" class="${currentTime==='night'?'pm':''}" onclick="setTime('night')" title="Night">🌙</button>
-          </div>
-        </div>
-        <div class="row2">
-          <div style="flex:1;">
-            <div style="font-size:11px;color:var(--text-faint);font-weight:700;margin-bottom:3px;">⚖️ Weight (lbs)</div>
-            <input type="number" id="logWt" class="inp" placeholder="e.g. 165.2">
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:var(--text-faint);font-weight:700;margin-bottom:3px;">🔥 Body Fat %</div>
-            <input type="number" id="logBf" class="inp" placeholder="e.g. 32.5">
-          </div>
-        </div>
-        <input type="text" id="logNote" class="inp" placeholder="Note (optional)" style="margin-bottom:8px;">
-        <div id="logErr" class="err"></div>
-        <button class="btn" onclick="addEntry()">Add entry</button>
-      </div>
-      <div id="entryList">
-        ${s.length===0?'<div class="card" style="text-align:center;color:var(--text-faint);">No entries yet.</div>':
-          [...s].reverse().map(e=>`
-          <div class="entry">
-            <div>
-              <div style="font-size:12px;color:var(--text-faint);">${e.date} ${e.time==='morning'?'☀️':'🌙'}</div>
-              <div style="font-size:18px;font-weight:800;">${e.weight} lbs${e.bodyFat!=null?`<span style="font-size:13px;color:var(--purple);margin-left:8px;">${e.bodyFat}% BF</span>`:''}</div>
-              ${e.musclePct!=null?`<span style="font-size:12px;color:var(--green);">${e.musclePct}% muscle</span>`:''}
-              ${e.note?`<div style="font-size:12px;color:var(--text-faint);font-style:italic;">"${e.note}"</div>`:''}
-            </div>
-            <button class="del" onclick="delEntry('${e.date}')">✕</button>
-          </div>`).join('')}
-      </div>
+  <!-- PHOTOS -->
+  <div class="pane ${tab==='photos'?'on':''}">
+    <div class="card-main" style="margin-bottom:14px;">
+      <div class="sec" style="color:var(--goal-c);">Add Progress Photo</div>
+      <select id="pSel" class="inp" style="background:#fff;color:#111;margin-bottom:10px;">
+        <option value="">Select a date…</option>
+        ${[...s].reverse().map(x=>`<option value="${x.date}">${x.date} ${x.time==='morning'?'☀️':'🌙'} — ${x.weight} lbs</option>`).join('')}
+      </select>
+      <button class="btn btn-yellow" style="border:2px solid var(--border);" onclick="trigPhoto()">Upload Photo</button>
     </div>
-
-    <!-- MEASUREMENTS TAB -->
-    <div class="pane ${currentTab==='measurements'?'active':''}" id="pane-measurements">
-      <div class="card">
-        <div class="section-label">Log Measurements (inches)</div>
-        <input type="date" id="mDate" class="inp" value="${new Date().toISOString().split('T')[0]}" style="margin-bottom:8px;">
-        <div class="grid2" style="margin-bottom:8px;">
-          ${['Chest','Waist','Hips','Arms','Thighs'].map(f=>`<input type="number" id="m${f}" class="inp" placeholder="${f}">`).join('')}
-        </div>
-        <div id="mErr" class="err"></div>
-        <button class="btn" onclick="addMeas()">Add measurements</button>
-      </div>
-      <div id="measList">
-        ${(()=>{const sm=[...getMeas()].sort((a,b)=>a.date.localeCompare(b.date));
-        return sm.length===0?'<div class="card" style="text-align:center;color:var(--text-faint);">No measurements yet.</div>':
-          [...sm].reverse().map(m=>`
-          <div class="card">
-            <div style="font-size:13px;color:var(--text-faint);font-weight:700;margin-bottom:8px;">${m.date}</div>
-            <div class="grid3">
-              ${['chest','waist','hips','arms','thighs'].filter(f=>m[f]!=null).map(f=>`
-                <div class="chip"><div class="chip-label">${f}</div><div class="chip-val">${m[f]}"</div></div>
-              `).join('')}
-            </div>
-            <button class="del" style="margin-top:10px;font-size:12px;padding:4px 10px;" onclick="delMeas('${m.date}')">Delete</button>
-          </div>`).join('');
-        })()}
-      </div>
+    <div class="ph2">
+      ${s.filter(x=>x.photo).length===0?'<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted);">No photos yet.</div>':
+        [...s].filter(x=>x.photo).reverse().map(x=>`
+        <div class="pcrd">
+          <img src="${x.photo}" alt="${x.date}">
+          <div class="pinfo">
+            <div><div style="font-size:11px;color:var(--muted);">${x.date}</div><div style="font-size:14px;font-weight:800;">${x.weight} lbs</div></div>
+            <button class="del" style="font-size:12px;padding:3px 8px;border-radius:7px;" onclick="delPhoto('${x.date}')">✕</button>
+          </div>
+        </div>`).join('')}
     </div>
-
-    <!-- PHOTOS TAB -->
-    <div class="pane ${currentTab==='photos'?'active':''}" id="pane-photos">
-      <div class="card-blue" style="margin-bottom:14px;">
-        <div style="font-size:12px;color:var(--goal);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Add a Progress Photo</div>
-        <select id="photoSelect" class="inp" style="background:var(--card);margin-bottom:10px;">
-          <option value="">Select a date…</option>
-          ${[...s].reverse().map(e=>`<option value="${e.date}">${e.date} ${e.time==='morning'?'☀️':'🌙'} — ${e.weight} lbs</option>`).join('')}
-        </select>
-        <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
-        <button class="btn btn-yellow" style="border:2px solid var(--border);" onclick="triggerPhoto()">Upload Photo</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        ${s.filter(e=>e.photo).length===0?'<div class="card" style="grid-column:1/-1;text-align:center;color:var(--text-faint);">No photos yet.</div>':
-          [...s].filter(e=>e.photo).reverse().map(e=>`
-          <div style="border:3px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:3px 3px 0 var(--shadow);">
-            <img src="${e.photo}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">
-            <div style="padding:8px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-size:11px;color:var(--text-faint);">${e.date} ${e.time==='morning'?'☀️':'🌙'}</div>
-                <div style="font-size:14px;font-weight:800;">${e.weight} lbs</div>
-              </div>
-              <button class="del" style="font-size:12px;padding:3px 8px;border-radius:7px;" onclick="delPhoto('${e.date}')">✕</button>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>
+  </div>
   </div>`;
 }
 
-// ── SPECIAL CHARTS ────────────────────────────────────────
-function renderRing(s, goal, bfGoal, stats){
-  const p=pal();
-  if(!stats) return '<div class="card" style="text-align:center;padding:40px 0;">No data yet.</div>';
-  const start=s[0]?.weight??stats.current;
-  const lost=start-stats.current;
-  const totalToLose=start-goal;
-  const pct=totalToLose>0?Math.min(100,Math.max(0,(lost/totalToLose)*100)):0;
-  const rv=70,cx=120,cy=100,sw=22,circ=2*Math.PI*rv;
-  const bfStart=s.find(e=>e.bodyFat)?.bodyFat;
-  const bfPct=bfStart&&stats.currentBf&&bfGoal<bfStart?Math.min(100,Math.max(0,((bfStart-stats.currentBf)/(bfStart-bfGoal))*100)):null;
-  return `<div class="card">
-    <div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px;">
-      <div style="text-align:center;">
-        <svg width="240" height="200">
-          <circle cx="${cx}" cy="${cy}" r="${rv}" fill="none" stroke="${p.border}33" stroke-width="${sw}"/>
-          <circle cx="${cx}" cy="${cy}" r="${rv}" fill="none" stroke="${pct>=100?p.green:p.main}" stroke-width="${sw}" stroke-dasharray="${(pct/100)*circ} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
-          <text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="26" font-weight="900" fill="${p.text}">${Math.round(pct)}%</text>
-          <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="12" fill="${p.textMuted}">to goal</text>
-          <text x="${cx}" y="${cy+30}" text-anchor="middle" font-size="10" fill="${p.textFaint}">${stats.current} → ${goal} lbs</text>
-          <text x="${cx}" y="${cy+48}" text-anchor="middle" font-size="11" fill="${lost>=0?p.green:p.accent}" font-weight="700">${lost>=0?'↓ '+lost.toFixed(1)+' lbs lost':'↑ '+Math.abs(lost).toFixed(1)+' lbs gained'}</text>
-        </svg>
-        <div style="font-size:12px;font-weight:700;color:${p.textMuted};">⚖️ Weight Goal</div>
-      </div>
-      ${bfPct!==null?`
-      <div style="text-align:center;">
-        <svg width="240" height="200">
-          <circle cx="${cx}" cy="${cy}" r="${rv}" fill="none" stroke="${p.border}33" stroke-width="${sw}"/>
-          <circle cx="${cx}" cy="${cy}" r="${rv}" fill="none" stroke="${bfPct>=100?p.green:p.purple}" stroke-width="${sw}" stroke-dasharray="${(bfPct/100)*circ} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
-          <text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="26" font-weight="900" fill="${p.text}">${Math.round(bfPct)}%</text>
-          <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="12" fill="${p.textMuted}">to BF goal</text>
-          <text x="${cx}" y="${cy+30}" text-anchor="middle" font-size="10" fill="${p.textFaint}">${bfStart}% → ${bfGoal}%</text>
-          <text x="${cx}" y="${cy+48}" text-anchor="middle" font-size="11" fill="${p.purple}" font-weight="700">Now: ${stats.currentBf}%</text>
-        </svg>
-        <div style="font-size:12px;font-weight:700;color:${p.textMuted};">🔥 Body Fat Goal</div>
-      </div>`:''}
+// ── special charts ────────────────────────────────────────
+function renderRing(s,g,bf,st){
+  if(!st)return'<div class="card" style="text-align:center;padding:40px 0;color:var(--muted);">No data yet.</div>';
+  const q=p();
+  const start=s[0]?.weight??st.cur;
+  const lost=start-st.cur;
+  const pct=Math.min(100,Math.max(0,((start-g)>0?(lost/(start-g))*100:0)));
+  const r=70,cx=120,cy=100,sw=22,circ=2*Math.PI*r;
+  const bfStart=s.find(x=>x.bodyFat)?.bodyFat;
+  const bfPct=bfStart&&st.bf&&bf<bfStart?Math.min(100,Math.max(0,((bfStart-st.bf)/(bfStart-bf))*100)):null;
+  return`<div class="card"><div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px;">
+    <div style="text-align:center;">
+      <svg width="240" height="200">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${q.border}33" stroke-width="${sw}"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${pct>=100?q.green:q.main}" stroke-width="${sw}" stroke-dasharray="${(pct/100)*circ} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+        <text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="26" font-weight="900" fill="${q.text}">${Math.round(pct)}%</text>
+        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="12" fill="${q.muted}">to goal</text>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-size="10" fill="${q.faint}">${st.cur} → ${g} lbs</text>
+        <text x="${cx}" y="${cy+48}" text-anchor="middle" font-size="11" fill="${lost>=0?q.green:q.accent}" font-weight="700">${lost>=0?'↓ '+lost.toFixed(1)+' lbs lost':'↑ '+Math.abs(lost).toFixed(1)+' lbs gained'}</text>
+      </svg>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);">⚖️ Weight Goal</div>
     </div>
-  </div>`;
+    ${bfPct!==null?`<div style="text-align:center;">
+      <svg width="240" height="200">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${q.border}33" stroke-width="${sw}"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${bfPct>=100?q.green:q.purple}" stroke-width="${sw}" stroke-dasharray="${(bfPct/100)*circ} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+        <text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="26" font-weight="900" fill="${q.text}">${Math.round(bfPct)}%</text>
+        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="12" fill="${q.muted}">to BF goal</text>
+        <text x="${cx}" y="${cy+48}" text-anchor="middle" font-size="11" fill="${q.purple}" font-weight="700">Now: ${st.bf}%</text>
+      </svg>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);">🔥 BF Goal</div>
+    </div>`:''}
+  </div></div>`;
 }
 
 function renderHeatmap(s){
-  const byDate={};
-  s.forEach(e=>{if(e[currentMetric]!=null)byDate[e.date]=e[currentMetric];});
+  const q=p();
+  const byDate={};s.forEach(x=>{if(x[metric]!=null)byDate[x.date]=x[metric];});
   const vals=Object.values(byDate).filter(Boolean);
-  const vMin=vals.length?Math.min(...vals):0;
-  const vMax=vals.length?Math.max(...vals):1;
-  const today=new Date();
-  const startDate=new Date(today);
-  startDate.setDate(startDate.getDate()-7*26+1);
-  startDate.setDate(startDate.getDate()-startDate.getDay());
+  const vMin=vals.length?Math.min(...vals):0,vMax=vals.length?Math.max(...vals):1;
+  const today=new Date(),start=new Date(today);
+  start.setDate(start.getDate()-7*26+1);start.setDate(start.getDate()-start.getDay());
   const weeks=[];
-  for(let w=0;w<26;w++){
-    const week=[];
-    for(let d=0;d<7;d++){
-      const dt=new Date(startDate);
-      dt.setDate(startDate.getDate()+w*7+d);
-      const key=dt.toISOString().split('T')[0];
-      week.push({date:key,value:byDate[key]??null});
-    }
-    weeks.push(week);
-  }
-  const getColor=v=>{
-    if(v==null)return'#f1f5f9';
-    const t=(v-vMin)/(vMax-vMin||1);
-    return`rgb(${Math.round(22+t*198)},${Math.round(163-t*125)},${Math.round(74-t*74)})`;
-  };
+  for(let w=0;w<26;w++){const wk=[];for(let d=0;d<7;d++){const dt=new Date(start);dt.setDate(start.getDate()+w*7+d);const k=dt.toISOString().split('T')[0];wk.push({date:k,v:byDate[k]??null});}weeks.push(wk);}
+  const gc=v=>{if(v==null)return q.inp;const t=(v-vMin)/(vMax-vMin||1);return`rgb(${Math.round(22+t*198)},${Math.round(163-t*125)},${Math.round(74-t*74)})`};
   const cs=11,gap=2;
-  return `<div class="card">
-    <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">🗓️ Last 6 months — ${getMetricDefs()[currentMetric].label} by day</div>
-    <div style="overflow-x:auto;">
-      <div style="display:flex;gap:${gap}px;">
-        <div style="display:flex;flex-direction:column;gap:${gap}px;margin-right:2px;">
-          ${['S','M','T','W','T','F','S'].map(d=>`<div style="height:${cs}px;font-size:8px;color:#aaa;display:flex;align-items:center;">${d}</div>`).join('')}
-        </div>
-        ${weeks.map(week=>`
-          <div style="display:flex;flex-direction:column;gap:${gap}px;">
-            ${week.map(cell=>`
-              <div title="${cell.value?cell.date+': '+cell.value+getMetricDefs()[currentMetric].unit:cell.date}"
-                style="width:${cs}px;height:${cs}px;border-radius:2px;background:${getColor(cell.value)};${cell.value?'border:1px solid rgba(0,0,0,.1);':''}"></div>
-            `).join('')}
-          </div>`).join('')}
+  return`<div class="card">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">🗓️ Last 6 months</div>
+    <div style="overflow-x:auto;"><div style="display:flex;gap:${gap}px;">
+      <div style="display:flex;flex-direction:column;gap:${gap}px;margin-right:2px;">
+        ${['S','M','T','W','T','F','S'].map(d=>`<div style="height:${cs}px;font-size:8px;color:var(--faint);display:flex;align-items:center;">${d}</div>`).join('')}
       </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;margin-top:10px;">
-      <span style="font-size:10px;color:var(--text-faint);">Less</span>
-      ${[0,.25,.5,.75,1].map(t=>`<div style="width:12px;height:12px;border-radius:2px;background:${getColor(vMin+t*(vMax-vMin))};"></div>`).join('')}
-      <span style="font-size:10px;color:var(--text-faint);">More</span>
-      <span style="font-size:10px;color:#aaa;margin-left:8px;">Gray = no data</span>
-    </div>
-  </div>`;
-}
-
-function renderStacked(s){
-  const stackData=s.filter(d=>d.bodyFat!=null&&d.musclePct!=null);
-  if(stackData.length<2) return '<div class="card" style="text-align:center;color:var(--text-faint);padding:40px 0;">Need body fat data to show this chart.</div>';
-  // Use canvas
-  return `<div class="card" style="padding:12px 8px 10px;">
-    <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">🧱 Fat vs Muscle vs Other (lbs)</div>
-    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div>Fat</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Muscle</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#93c5fd;"></div>Other</div>
+      ${weeks.map(wk=>`<div style="display:flex;flex-direction:column;gap:${gap}px;">${wk.map(c=>`<div title="${c.date}${c.v!=null?': '+c.v:''}." style="width:${cs}px;height:${cs}px;border-radius:2px;background:${gc(c.v)};"></div>`).join('')}</div>`).join('')}
+    </div></div>
+    <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">
+      <span style="font-size:10px;color:var(--faint);">Less</span>
+      ${[0,.25,.5,.75,1].map(t=>`<div style="width:12px;height:12px;border-radius:2px;background:${gc(vMin+t*(vMax-vMin))};"></div>`).join('')}
+      <span style="font-size:10px;color:var(--faint);">More</span>
     </div>
   </div>`;
 }
 
-function renderRate(s){
-  const rateData=[];
-  for(let i=1;i<s.length;i++){
-    const prev=s[i-1],curr=s[i];
-    const days=(new Date(curr.date)-new Date(prev.date))/86400000;
-    if(days>0&&days<=14) rateData.push({date:curr.date,change:parseFloat(((curr.weight-prev.weight)/days*7).toFixed(2))});
-  }
-  if(rateData.length<2) return '<div class="card" style="text-align:center;color:var(--text-faint);padding:40px 0;">Need more entries to calculate rate.</div>';
-  return `<div class="card" style="padding:12px 8px 10px;">
-    <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">📉 Weekly rate of change (lbs/week)</div>
-    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Lost</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div>Gained</div>
-    </div>
-  </div>`;
-}
-
-// ── PURE CANVAS CHARTS (no external library) ──────────────
-function renderChart(){
-  const canvas=document.getElementById('mainChart');
+// ── canvas chart ──────────────────────────────────────────
+function drawChart(){
+  const canvas=document.getElementById('MC');
   if(!canvas)return;
-  chartInstance=null;
+  const e=gE(),g=gG(),bf=gB();
+  const s=filtered(e);
+  const q=p();
+  const mdef=MDEFS[metric];
+  const mcolor={'weight':q.main,'bodyFat':q.purple,'musclePct':q.green,'visceralFat':q.accent}[metric]||q.main;
 
-  const entries=getEntries();
-  const s=filteredSorted(entries);
-  const goal=getGoal();
-  const bfGoal=getBfGoal();
-  const mDef=getMetricDefs()[currentMetric];
-  const p=pal();
-  const ctx=canvas.getContext('2d');
   const dpr=window.devicePixelRatio||1;
-  const W=canvas.parentElement.clientWidth-8;
+  const W=canvas.parentElement.clientWidth-4;
   const H=240;
-  canvas.width=W*dpr; canvas.height=H*dpr;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
   if(!s.length){
-    ctx.fillStyle=p.textMuted; ctx.font='14px system-ui'; ctx.textAlign='center';
-    ctx.fillText('Add entries to see your chart.',W/2,H/2); return;
+    ctx.fillStyle=q.muted;ctx.font='14px system-ui';ctx.textAlign='center';
+    ctx.fillText('Add entries to see your chart.',W/2,H/2);return;
   }
 
-  // Build datasets
-  const metric=currentMetric;
-  let vals,labels,trend,fatVals,muscleVals,otherVals,rateVals,rateLabels;
+  const PAD={t:12,r:12,b:32,l:44};
+  const CW=W-PAD.l-PAD.r,CH=H-PAD.t-PAD.b;
 
-  if(currentChartType==='stacked'){
+  // build data
+  let labels,vals,trend,rateD,rateL,fatV,musV,othV;
+  if(ctype==='stacked'){
     const sd=s.filter(d=>d.bodyFat!=null&&d.musclePct!=null);
-    if(sd.length<2){ctx.fillStyle=p.textMuted;ctx.font='13px system-ui';ctx.textAlign='center';ctx.fillText('Need body fat data for this chart.',W/2,H/2);return;}
-    labels=sd.map(d=>fmtDate(d.date));
-    fatVals=sd.map(d=>+(d.weight*d.bodyFat/100).toFixed(1));
-    muscleVals=sd.map(d=>+(d.weight*d.musclePct/100).toFixed(1));
-    otherVals=sd.map(d=>Math.max(0,+(d.weight*(1-d.bodyFat/100-d.musclePct/100)).toFixed(1)));
-  } else if(currentChartType==='rate'){
-    rateVals=[]; rateLabels=[];
+    if(sd.length<2){ctx.fillStyle=q.muted;ctx.font='13px system-ui';ctx.textAlign='center';ctx.fillText('Need body fat data.',W/2,H/2);return;}
+    labels=sd.map(d=>fd(d.date));
+    fatV=sd.map(d=>parseFloat((d.weight*d.bodyFat/100).toFixed(1)));
+    musV=sd.map(d=>parseFloat((d.weight*d.musclePct/100).toFixed(1)));
+    othV=sd.map(d=>Math.max(0,parseFloat((d.weight*(1-d.bodyFat/100-d.musclePct/100)).toFixed(1))));
+  } else if(ctype==='rate'){
+    rateD=[];rateL=[];
     for(let i=1;i<s.length;i++){
       const prev=s[i-1],curr=s[i];
       const days=(new Date(curr.date)-new Date(prev.date))/86400000;
-      if(days>0&&days<=14){rateVals.push(parseFloat(((curr.weight-prev.weight)/days*7).toFixed(2)));rateLabels.push(fmtDate(curr.date));}
+      if(days>0&&days<=14){rateD.push(parseFloat(((curr.weight-prev.weight)/days*7).toFixed(2)));rateL.push(fd(curr.date));}
     }
-    if(rateVals.length<2){ctx.fillStyle=p.textMuted;ctx.font='13px system-ui';ctx.textAlign='center';ctx.fillText('Need more entries to calculate rate.',W/2,H/2);return;}
+    if(rateD.length<2){ctx.fillStyle=q.muted;ctx.font='13px system-ui';ctx.textAlign='center';ctx.fillText('Need more entries.',W/2,H/2);return;}
   } else {
-    const data=movingAvg(s,metric);
-    labels=data.map(d=>fmtDate(d.date));
+    const data=mavg(s,metric);
+    labels=data.map(d=>fd(d.date));
     vals=data.map(d=>d[metric]);
-    trend=data.map(d=>d[metric+'Trend']);
+    trend=data.map(d=>d[metric+'T']);
   }
 
-  // Layout
-  const PAD={top:12,right:12,bottom:32,left:44};
-  const cW=W-PAD.left-PAD.right;
-  const cH=H-PAD.top-PAD.bottom;
+  // y range
+  const cGoal=metric==='weight'?g:metric==='bodyFat'?bf:null;
+  let allN=[];
+  if(ctype==='stacked')allN=[...fatV,...musV,...othV].map((_,i)=>(fatV[i]||0)+(musV[i]||0)+(othV[i]||0));
+  else if(ctype==='rate')allN=rateD;
+  else allN=[...(vals||[]),...(trend||[])].filter(v=>v!=null);
+  if(cGoal)allN.push(cGoal);
+  const vMin=allN.length?Math.floor(Math.min(...allN)-2):0;
+  const vMax=allN.length?Math.ceil(Math.max(...allN)+2):100;
+  const vR=vMax-vMin||1;
 
-  function allData(){
-    if(currentChartType==='stacked') return [...fatVals,...muscleVals,...otherVals].map((v,i)=>fatVals[i]+(muscleVals[i]||0)+(otherVals[i]||0));
-    if(currentChartType==='rate') return rateVals;
-    return [...(vals||[]),...(trend||[])].filter(v=>v!=null);
+  const lbs=ctype==='rate'?rateL:labels;
+  const N=lbs?.length||1;
+
+  const xP=i=>PAD.l+(i/(Math.max(N-1,1)))*CW;
+  const xB=i=>PAD.l+(i/N)*CW;
+  const bW=()=>Math.max(2,CW/N*0.7);
+  const yP=v=>PAD.t+(1-(v-vMin)/vR)*CH;
+
+  // grid
+  ctx.strokeStyle=q.border+'33';ctx.lineWidth=1;
+  ctx.font='10px system-ui';ctx.fillStyle=q.faint;ctx.textAlign='right';
+  for(let i=0;i<=5;i++){
+    const v=vMin+(vR*i/5);const y=yP(v);
+    ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(PAD.l+CW,y);ctx.stroke();
+    ctx.fillText(Math.round(v),PAD.l-4,y+3);
   }
-  const ad=allData().filter(v=>v!=null);
-  const cGoal=metric==='weight'?goal:metric==='bodyFat'?bfGoal:null;
-  if(cGoal)ad.push(cGoal);
-  const vMin=ad.length?Math.floor(Math.min(...ad)-2):0;
-  const vMax=ad.length?Math.ceil(Math.max(...ad)+2):100;
-  const vRange=vMax-vMin||1;
+  // x labels
+  ctx.fillStyle=q.faint;ctx.textAlign='center';
+  const step=Math.max(1,Math.ceil(N/7));
+  lbs?.forEach((l,i)=>{if(i%step===0)ctx.fillText(l,xP(i),H-PAD.b+14);});
 
-  const n=(currentChartType==='rate'?rateLabels:labels)?.length||1;
+  // zero line for rate
+  if(ctype==='rate'){ctx.strokeStyle=q.border;ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(PAD.l,yP(0));ctx.lineTo(PAD.l+CW,yP(0));ctx.stroke();}
 
-  function xPos(i){return PAD.left+(i/(Math.max(n-1,1)))*cW;}
-  function xBar(i){return PAD.left+(i/n)*cW;}
-  function barW(){return Math.max(2,cW/n*0.7);}
-  function yPos(v){return PAD.top+(1-(v-vMin)/vRange)*cH;}
-
-  // Grid
-  ctx.strokeStyle=p.border+'33'; ctx.lineWidth=1;
-  const steps=5;
-  ctx.font=`10px system-ui`; ctx.fillStyle=p.textFaint; ctx.textAlign='right';
-  for(let i=0;i<=steps;i++){
-    const v=vMin+(vRange*i/steps);
-    const y=yPos(v);
-    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
-    ctx.fillText(Math.round(v),PAD.left-4,y+3);
-  }
-
-  // X labels
-  const lbs=currentChartType==='rate'?rateLabels:labels;
-  const step=Math.max(1,Math.ceil(lbs.length/7));
-  ctx.fillStyle=p.textFaint; ctx.textAlign='center';
-  lbs.forEach((l,i)=>{if(i%step===0)ctx.fillText(l,xPos(i),H-PAD.bottom+14);});
-
-  // Zero line for rate
-  if(currentChartType==='rate'){
-    ctx.strokeStyle=p.border; ctx.lineWidth=1.5; ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(PAD.left,yPos(0));ctx.lineTo(PAD.left+cW,yPos(0));ctx.stroke();
+  // goal line
+  if(cGoal&&ctype!=='stacked'&&ctype!=='rate'){
+    ctx.strokeStyle=q.goalc;ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(PAD.l,yP(cGoal));ctx.lineTo(PAD.l+CW,yP(cGoal));ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle=q.goalc;ctx.textAlign='right';ctx.font='10px system-ui';
+    ctx.fillText('Goal '+cGoal,PAD.l+CW,yP(cGoal)-4);
   }
 
-  // Goal line
-  if(cGoal&&currentChartType!=='stacked'&&currentChartType!=='rate'){
-    ctx.strokeStyle=p.goal; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
-    ctx.beginPath();ctx.moveTo(PAD.left,yPos(cGoal));ctx.lineTo(PAD.left+cW,yPos(cGoal));ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle=p.goal; ctx.textAlign='right'; ctx.font='10px system-ui';
-    ctx.fillText('Goal '+cGoal,PAD.left+cW,yPos(cGoal)-4);
-  }
+  ctx.setLineDash([]);
 
-  // ── Draw by type ──
-  if(currentChartType==='bar'){
-    const bw=barW();
-    vals.forEach((v,i)=>{
-      if(v==null)return;
-      ctx.fillStyle=mDef.color;
-      const y=yPos(v),h=yPos(vMin)-y;
-      ctx.fillRect(xBar(i)+barW()*0.15,y,bw,h);
-    });
-  } else if(currentChartType==='stacked'){
-    const bw=barW();
-    fatVals.forEach((_,i)=>{
-      const x=xBar(i)+bw*0.15;
+  if(ctype==='bar'){
+    vals.forEach((v,i)=>{if(v==null)return;ctx.fillStyle=mcolor;ctx.fillRect(xB(i)+bW()*0.15,yP(v),bW(),yP(vMin)-yP(v));});
+  } else if(ctype==='stacked'){
+    fatV.forEach((_,i)=>{
       let base=vMin;
-      [[fatVals[i],p.accent],[muscleVals[i],p.green],[otherVals[i],'#93c5fd']].forEach(([v,c])=>{
-        if(!v)return;
-        ctx.fillStyle=c;
-        const y=yPos(base+v),h=yPos(base)-y;
-        ctx.fillRect(x,y,bw,h);
-        base+=v;
+      [[fatV[i],q.accent],[musV[i],q.green],[othV[i],'#93c5fd']].forEach(([v,c])=>{
+        if(!v)return;ctx.fillStyle=c;ctx.fillRect(xB(i)+bW()*0.15,yP(base+v),bW(),yP(base)-yP(base+v));base+=v;
       });
     });
-  } else if(currentChartType==='rate'){
-    const bw=barW();
-    rateVals.forEach((v,i)=>{
-      ctx.fillStyle=v<=0?p.green:p.accent;
-      const y=v<=0?yPos(v):yPos(0),h=Math.abs(yPos(0)-yPos(v));
-      ctx.fillRect(xBar(i)+bw*0.15,y,bw,Math.max(2,h));
+  } else if(ctype==='rate'){
+    rateD.forEach((v,i)=>{
+      ctx.fillStyle=v<=0?q.green:q.accent;
+      const y=v<=0?yP(v):yP(0),h=Math.abs(yP(0)-yP(v));
+      ctx.fillRect(xB(i)+bW()*0.15,y,bW(),Math.max(2,h));
     });
   } else {
-    // Line / Area / Scatter / Combo
-    const isArea=currentChartType==='area';
-    const isCombo=currentChartType==='combo';
-    const isScatter=currentChartType==='scatter';
-
-    // Combo bars
-    if(isCombo){
-      const bw=barW();
-      vals.forEach((v,i)=>{
-        if(v==null)return;
-        ctx.fillStyle=mDef.color+'99';
-        const y=yPos(v),h=yPos(vMin)-y;
-        ctx.fillRect(xBar(i)+bw*0.15,y,bw,h);
-      });
+    if(ctype==='combo'){
+      vals.forEach((v,i)=>{if(v==null)return;ctx.fillStyle=mcolor+'99';ctx.fillRect(xB(i)+bW()*0.15,yP(v),bW(),yP(vMin)-yP(v));});
     }
-
-    // Area fill
-    if(isArea&&vals.filter(v=>v!=null).length>1){
-      ctx.beginPath();
-      let first=true;
-      vals.forEach((v,i)=>{
-        if(v==null)return;
-        if(first){ctx.moveTo(xPos(i),yPos(v));first=false;}
-        else ctx.lineTo(xPos(i),yPos(v));
-      });
-      ctx.lineTo(xPos(vals.length-1),yPos(vMin));
-      ctx.lineTo(xPos(vals.findIndex(v=>v!=null)),yPos(vMin));
-      ctx.closePath();
-      ctx.fillStyle=mDef.color+'33'; ctx.fill();
+    if(ctype==='area'&&vals.filter(v=>v!=null).length>1){
+      ctx.beginPath();let first=true;
+      vals.forEach((v,i)=>{if(v==null)return;first?(ctx.moveTo(xP(i),yP(v)),first=false):ctx.lineTo(xP(i),yP(v));});
+      ctx.lineTo(xP(vals.length-1),yP(vMin));ctx.lineTo(xP(vals.findIndex(v=>v!=null)),yP(vMin));
+      ctx.closePath();ctx.fillStyle=mcolor+'33';ctx.fill();
     }
-
-    // Main line or scatter
-    if(isScatter){
-      vals.forEach((v,i)=>{
-        if(v==null)return;
-        ctx.beginPath();ctx.arc(xPos(i),yPos(v),5,0,Math.PI*2);
-        ctx.fillStyle=mDef.color;ctx.fill();
-        ctx.strokeStyle=p.border;ctx.lineWidth=1.5;ctx.stroke();
-      });
-    } else if(!isCombo||true){
-      ctx.beginPath();ctx.setLineDash([]);ctx.strokeStyle=mDef.color;ctx.lineWidth=2.5;
-      let first=true;
-      vals.forEach((v,i)=>{
-        if(v==null)return;
-        if(first){ctx.moveTo(xPos(i),yPos(v));first=false;}
-        else ctx.lineTo(xPos(i),yPos(v));
-      });
+    if(ctype==='scatter'){
+      vals.forEach((v,i)=>{if(v==null)return;ctx.beginPath();ctx.arc(xP(i),yP(v),5,0,Math.PI*2);ctx.fillStyle=mcolor;ctx.fill();ctx.strokeStyle=q.border;ctx.lineWidth=1.5;ctx.stroke();});
+    } else {
+      ctx.beginPath();ctx.strokeStyle=mcolor;ctx.lineWidth=2.5;let first=true;
+      vals.forEach((v,i)=>{if(v==null)return;first?(ctx.moveTo(xP(i),yP(v)),first=false):ctx.lineTo(xP(i),yP(v));});
       ctx.stroke();
-      // dots
-      vals.forEach((v,i)=>{
-        if(v==null)return;
-        ctx.beginPath();ctx.arc(xPos(i),yPos(v),4,0,Math.PI*2);
-        ctx.fillStyle=mDef.color;ctx.fill();
-        ctx.strokeStyle=p.border;ctx.lineWidth=1.5;ctx.stroke();
-      });
+      vals.forEach((v,i)=>{if(v==null)return;ctx.beginPath();ctx.arc(xP(i),yP(v),4,0,Math.PI*2);ctx.fillStyle=mcolor;ctx.fill();ctx.strokeStyle=q.border;ctx.lineWidth=1.5;ctx.stroke();});
     }
-
-    // Trend line
     if(trend&&trend.filter(v=>v!=null).length>1){
-      ctx.beginPath();ctx.setLineDash([4,2]);ctx.strokeStyle=p.trend;ctx.lineWidth=1.5;
-      let first=true;
-      trend.forEach((v,i)=>{
-        if(v==null)return;
-        if(first){ctx.moveTo(xPos(i),yPos(v));first=false;}
-        else ctx.lineTo(xPos(i),yPos(v));
-      });
+      ctx.beginPath();ctx.setLineDash([4,2]);ctx.strokeStyle=q.trend;ctx.lineWidth=1.5;let first=true;
+      trend.forEach((v,i)=>{if(v==null)return;first?(ctx.moveTo(xP(i),yP(v)),first=false):ctx.lineTo(xP(i),yP(v));});
       ctx.stroke();ctx.setLineDash([]);
     }
   }
 
-  // Update legend
-  const legendEl=document.getElementById('chartLegend');
-  if(legendEl){
-    if(currentChartType==='stacked'){
-      legendEl.innerHTML=`<div class="legend-item"><div class="legend-dot" style="background:${p.accent};"></div>Fat</div><div class="legend-item"><div class="legend-dot" style="background:${p.green};"></div>Muscle</div><div class="legend-item"><div class="legend-dot" style="background:#93c5fd;"></div>Other</div>`;
-    } else if(currentChartType==='rate'){
-      legendEl.innerHTML=`<div class="legend-item"><div class="legend-dot" style="background:${p.green};"></div>Lost</div><div class="legend-item"><div class="legend-dot" style="background:${p.accent};"></div>Gained</div>`;
-    } else {
-      legendEl.innerHTML=`<div class="legend-item"><div class="legend-dot" style="background:${mDef.color};"></div>Actual</div><div class="legend-item"><div class="legend-dot" style="background:${p.trend};"></div>Trend</div>${cGoal?`<div class="legend-item"><div class="legend-dot" style="background:${p.goal};"></div>Goal</div>`:''}`;
-    }
+  const leg=document.getElementById('LEG');
+  if(leg){
+    if(ctype==='stacked')leg.innerHTML=`<div class="li"><div class="ld" style="background:${q.accent};"></div>Fat</div><div class="li"><div class="ld" style="background:${q.green};"></div>Muscle</div><div class="li"><div class="ld" style="background:#93c5fd;"></div>Other</div>`;
+    else if(ctype==='rate')leg.innerHTML=`<div class="li"><div class="ld" style="background:${q.green};"></div>Lost</div><div class="li"><div class="ld" style="background:${q.accent};"></div>Gained</div>`;
+    else leg.innerHTML=`<div class="li"><div class="ld" style="background:${mcolor};"></div>Actual</div><div class="li"><div class="ld" style="background:${q.trend};"></div>Trend</div>${cGoal?`<div class="li"><div class="ld" style="background:${q.goalc};"></div>Goal</div>`:''}`;
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// EVENTS
-// ═══════════════════════════════════════════════════════════
-function bindEvents(){}
-
-window.editProfile=function(id){
-  const p=profiles.find(x=>x.id===id);
-  if(!p)return;
-  const panel=document.getElementById('editProfilePanel');
-  panel.style.display='block';
-  panel.innerHTML=`
-    <div style="font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:10px;">Edit Profile</div>
-    <input id="editName" class="inp" value="${p.name}" placeholder="Name" style="margin-bottom:10px;">
-    <div style="font-size:11px;color:var(--text-faint);font-weight:700;margin-bottom:6px;">Choose an icon:</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
-      ${ICONS.map(icon=>`
-        <button onclick="selectIcon('${id}','${icon}')" style="width:38px;height:38px;border-radius:8px;border:${(p.icon||'⭐')===icon?'3px solid '+p.border+":'2px solid '+p.border};background:${(p.icon||'⭐')===icon?p.goal:p.card};font-size:18px;cursor:pointer;" id="icon-${icon}">${icon}</button>
-      `).join('')}
-    </div>
-    <div style="font-size:11px;color:var(--text-faint);font-weight:700;margin-bottom:6px;">Choose a theme:</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
-      ${Object.entries(PALETTES).map(([k,pal])=>`
-        <button onclick="selectTheme('${k}')" id="theme-${k}"
-          style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:9px;border:${(p.palette||'primary')===k?'3px solid #111':'2px solid #ccc'};cursor:pointer;background:${pal.bg};font-size:11px;font-weight:700;color:${pal.text};font-family:inherit;">
-          <div style="width:12px;height:12px;border-radius:50%;background:${pal.main};flex-shrink:0;border:1px solid rgba(0,0,0,0.15);"></div>
-          ${pal.name}
-        </button>
-      `).join('')}
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn" style="flex:1;" onclick="saveProfileEdit('${id}')">Save</button>
-      <button class="btn btn-yellow" style="flex:1;border:2px solid var(--border);" onclick="closeEditPanel()">Cancel</button>
-    </div>`;
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-};
-window.selectIcon=function(id,icon){
-  // Visually highlight selected icon
-  ICONS.forEach(ic=>{
-    const btn=document.getElementById('icon-'+ic);
-    if(btn){btn.style.border='2px solid #e5e7eb';btn.style.background='#fff';}
-  });
-  const sel=document.getElementById('icon-'+icon);
-  if(sel){sel.style.border='3px solid #111';sel.style.background='#fde047';}
-  // Store temporarily
-  window._pendingIcon=icon;
-};
-window.selectTheme=function(k){
-  Object.keys(PALETTES).forEach(pk=>{
-    const btn=document.getElementById('theme-'+pk);
-    if(btn){btn.style.border='2px solid #ccc';}
-  });
-  const sel=document.getElementById('theme-'+k);
-  if(sel)sel.style.border='3px solid #111';
-  window._pendingPalette=k;
-};
-window.saveProfileEdit=function(id){
-  const name=document.getElementById('editName').value.trim();
-  if(!name)return;
-  const icon=window._pendingIcon||(profiles.find(p=>p.id===id)?.icon||'⭐');
-  const palette=window._pendingPalette||(profiles.find(p=>p.id===id)?.palette||'primary');
-  profiles=profiles.map(p=>p.id===id?{...p,name,icon,palette}:p);
-  ss('wt_profiles',profiles);
-  if(currentProfile?.id===id){
-    currentProfile={...currentProfile,name,icon,palette};
-    currentPalette=palette;
-    ss('wt_last_profile',currentProfile);
-  }
-  window._pendingIcon=null;
-  window._pendingPalette=null;
+// ── events ────────────────────────────────────────────────
+window.selProf=function(id){
+  profile=profiles.find(x=>x.id===id);
+  palette=profile.palette||'primary';
+  sl('wt_last',profile);
   render();
 };
-window.closeEditPanel=function(){
-  const panel=document.getElementById('editProfilePanel');
-  if(panel)panel.style.display='none';
-  window._pendingIcon=null;
-};
-window.selectProfile=function(id){
-  currentProfile=profiles.find(p=>p.id===id);
-  currentPalette=currentProfile.palette||'primary';
-  ss('wt_last_profile',currentProfile);
-  render();
-};
-window.switchUser=function(){currentProfile=null;currentPalette='primary';render();};
-window.addProfile=function(){
-  if(profiles.length>=MAX_PROFILES){alert('Maximum '+MAX_PROFILES+' profiles reached.');return;}
+window.goProfiles=function(){profile=null;palette='primary';render();};
+window.addProf=function(){
+  if(profiles.length>=MAX){alert('Max 5 profiles.');return;}
   const id='p'+Date.now();
-  const newP={id,name:'New Person',icon:'⭐'};
-  profiles=[...profiles,newP];
-  ss('wt_profiles',profiles);
-  render();
-  // Auto-open edit for the new profile
-  setTimeout(()=>window.editProfile(id),50);
+  profiles=[...profiles,{id,name:'New Person',icon:'⭐',palette:'primary'}];
+  sl('wt_profiles',profiles);render();
+  setTimeout(()=>openEdit(id),50);
 };
-window.deleteProfile=function(id){
-  if(!confirm('Delete this profile and all its data?'))return;
-  ['entries','meas','goal','bfgoal'].forEach(k=>{try{localStorage.removeItem(`wt_${id}_${k}`);}catch{}});
-  profiles=profiles.filter(p=>p.id!==id);
-  ss('wt_profiles',profiles);
-  render();
+window.delProf=function(id){
+  if(!confirm('Delete this profile and all data?'))return;
+  ['entries','meas','goal','bfgoal'].forEach(k=>{try{localStorage.removeItem('wt_'+id+'_'+k);}catch{}});
+  profiles=profiles.filter(x=>x.id!==id);sl('wt_profiles',profiles);render();
 };
-window.switchTab=function(t){currentTab=t;render();};
-window.setPalette=function(p){
-  currentPalette=p;
-  if(currentProfile){
-    profiles=profiles.map(pr=>pr.id===currentProfile.id?{...pr,palette:p}:pr);
-    currentProfile={...currentProfile,palette:p};
-    ss('wt_profiles',profiles);
-    ss('wt_last_profile',currentProfile);
-  }
-  render();
+
+let _editId=null,_pendIcon=null,_pendPal=null;
+window.openEdit=function(id){
+  _editId=id;_pendIcon=null;_pendPal=null;
+  const q=profiles.find(x=>x.id===id);
+  document.getElementById('editPanel').style.display='block';
+  document.getElementById('eName').value=q.name;
+  // icon picker
+  document.getElementById('iconPicker').innerHTML=ICONS.map(ic=>`
+    <button id="ic-${ic}" onclick="pickIcon('${ic}')" style="width:38px;height:38px;border-radius:8px;font-size:18px;cursor:pointer;border:${(q.icon||'⭐')===ic?'3px solid var(--border)':'2px solid transparent'};background:${(q.icon||'⭐')===ic?'var(--goal-c)':'var(--inp)'};">${ic}</button>
+  `).join('');
+  // theme picker
+  document.getElementById('themePicker').innerHTML=Object.entries(PAL).map(([k,v])=>`
+    <button id="th-${k}" onclick="pickTheme('${k}')" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:9px;border:${(q.palette||'primary')===k?'3px solid var(--border)':'2px solid transparent'};cursor:pointer;background:${v.bg};font-size:11px;font-weight:700;color:${v.text};font-family:inherit;">
+      <div style="width:12px;height:12px;border-radius:50%;background:${v.main};flex-shrink:0;border:1px solid rgba(0,0,0,.2);"></div>${v.name}
+    </button>
+  `).join('');
 };
-window.setDatePreset=function(p){
-  dateRangePreset=p;
-  if(p!=='custom'){dateRangeFrom='';dateRangeTo='';}
-  render();
+window.closeEdit=function(){document.getElementById('editPanel').style.display='none';_editId=_pendIcon=_pendPal=null;};
+window.pickIcon=function(ic){
+  _pendIcon=ic;
+  document.querySelectorAll('[id^="ic-"]').forEach(b=>{b.style.border='2px solid transparent';b.style.background='var(--inp)';});
+  const b=document.getElementById('ic-'+ic);if(b){b.style.border='3px solid var(--border)';b.style.background='var(--goal-c)';}
 };
-window.setDateFrom=function(v){dateRangeFrom=v;render();};
-window.setDateTo=function(v){dateRangeTo=v;render();};
-window.setChartType=function(t){currentChartType=t;render();};
-window.setTime=function(t){
-  currentTime=t;
-  document.getElementById('btnAM').className=t==='morning'?'am':'';
-  document.getElementById('btnPM').className=t==='night'?'pm':'';
+window.pickTheme=function(k){
+  _pendPal=k;
+  document.querySelectorAll('[id^="th-"]').forEach(b=>b.style.border='2px solid transparent');
+  const b=document.getElementById('th-'+k);if(b)b.style.border='3px solid var(--border)';
 };
-window.toggleBMI=function(){
-  const p=document.getElementById('bmiPanel');
-  const a=document.getElementById('bmiArrow');
-  const open=p.style.display==='none';
-  p.style.display=open?'block':'none';
-  a.textContent=open?'▾':'▸';
+window.saveEdit=function(){
+  const name=document.getElementById('eName').value.trim();if(!name)return;
+  const ic=_pendIcon||(profiles.find(x=>x.id===_editId)?.icon||'⭐');
+  const pal=_pendPal||(profiles.find(x=>x.id===_editId)?.palette||'primary');
+  profiles=profiles.map(x=>x.id===_editId?{...x,name,icon:ic,palette:pal}:x);
+  sl('wt_profiles',profiles);
+  if(profile?.id===_editId){profile={...profile,name,icon:ic,palette:pal};palette=pal;sl('wt_last',profile);}
+  closeEdit();render();
 };
-window.editGoal=function(){
-  document.getElementById('goalDisplay').style.display='none';
-  document.getElementById('goalEdit').style.display='flex';
+window.toggleBC=function(){
+  const el=document.getElementById('bcPanel');
+  const btn=document.getElementById('bcBtn');
+  const open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  btn.textContent=(open?'▾':'▸')+btn.textContent.slice(1);
 };
-window.saveGoal=function(){
-  const g=parseFloat(document.getElementById('goalInput').value);
-  if(!isNaN(g)&&g>50&&g<600){saveGoal(g);render();}
-};
-// Fix name collision
-window.saveGoal=function(){
-  const g=parseFloat(document.getElementById('goalInput').value);
-  if(!isNaN(g)&&g>50&&g<600){ss(pk('goal'),g);render();}
-};
+window.editGoal=function(){document.getElementById('gDisp').style.display='none';document.getElementById('gEdit').style.display='block';};
+window.saveGoal=function(){const g=parseFloat(document.getElementById('gInp').value);if(!isNaN(g)&&g>0){sG(g);}document.getElementById('gDisp').textContent=gG()+' lbs';document.getElementById('gDisp').style.display='block';document.getElementById('gEdit').style.display='none';render();};
+window.setTab=function(t){tab=t;render();};
+window.setMetric=function(m){metric=m;render();};
+window.setTime=function(t){ctime=t;document.getElementById('bAM').className=t==='morning'?'am':'';document.getElementById('bPM').className=t==='night'?'pm':'';};
+window.setDP=function(k){dpreset=k;if(k!=='custom'){dfrom='';dto='';}render();};
 window.addEntry=function(){
-  const date=document.getElementById('logDate').value;
-  const wt=parseFloat(document.getElementById('logWt').value);
-  const bf=document.getElementById('logBf').value!==''?parseFloat(document.getElementById('logBf').value):null;
-  const note=document.getElementById('logNote').value;
-  const err=document.getElementById('logErr');
-  if(isNaN(wt)||wt<50||wt>600){err.textContent='Enter a weight between 50–600 lbs.';err.style.display='block';return;}
+  const date=document.getElementById('lDate').value;
+  const wt=parseFloat(document.getElementById('lWt').value);
+  const bf=document.getElementById('lBf').value!==''?parseFloat(document.getElementById('lBf').value):null;
+  const note=document.getElementById('lNote').value;
+  const err=document.getElementById('lErr');
+  if(isNaN(wt)||wt<50||wt>600){err.textContent='Enter weight between 50–600 lbs.';err.style.display='block';return;}
   if(bf!==null&&(isNaN(bf)||bf<1||bf>70)){err.textContent='Body fat must be 1–70%.';err.style.display='block';return;}
   err.style.display='none';
-  let entries=getEntries();
-  entries=entries.filter(e=>e.date!==date);
-  entries.push({date,weight:wt,bodyFat:bf,note,time:currentTime,photo:null});
-  saveEntries(entries);
-  render();
+  let e=gE().filter(x=>x.date!==date);
+  e.push({date,weight:wt,bodyFat:bf,note,time:ctime,photo:null});
+  sE(e);render();
 };
-window.delEntry=function(date){
-  let entries=getEntries().filter(e=>e.date!==date);
-  saveEntries(entries);render();
-};
+window.delEntry=function(date){sE(gE().filter(x=>x.date!==date));render();};
 window.addMeas=function(){
   const date=document.getElementById('mDate').value;
   const fields=['Chest','Waist','Hips','Arms','Thighs'];
   const entry={date};
-  fields.forEach(f=>{
-    const v=document.getElementById('m'+f).value;
-    if(v!=='')entry[f.toLowerCase()]=parseFloat(v);
-  });
-  let meas=getMeas().filter(m=>m.date!==date);
-  meas.push(entry);saveMeas(meas);render();
+  fields.forEach(f=>{const v=document.getElementById('m'+f).value;if(v!=='')entry[f.toLowerCase()]=parseFloat(v);});
+  let m=gM().filter(x=>x.date!==date);m.push(entry);sM(m);render();
 };
-window.delMeas=function(date){saveMeas(getMeas().filter(m=>m.date!==date));render();};
-window.triggerPhoto=function(){
-  const date=document.getElementById('photoSelect').value;
-  if(!date)return;
-  document.getElementById('photoFile').click();
-};
-window.uploadPhoto=function(input){
-  const date=document.getElementById('photoSelect').value;
-  const file=input.files[0];
-  if(!file||!date)return;
+window.delMeas=function(date){sM(gM().filter(x=>x.date!==date));render();};
+window.trigPhoto=function(){const d=document.getElementById('pSel').value;if(!d)return;window._photoDate=d;document.getElementById('photoF').click();};
+window.upPhoto=function(inp){
+  const file=inp.files[0];if(!file||!window._photoDate)return;
   const reader=new FileReader();
-  reader.onload=e=>{
-    let entries=getEntries().map(en=>en.date===date?{...en,photo:e.target.result}:en);
-    saveEntries(entries);render();
-  };
+  reader.onload=ev=>{sE(gE().map(x=>x.date===window._photoDate?{...x,photo:ev.target.result}:x));render();};
   reader.readAsDataURL(file);
 };
-window.delPhoto=function(date){
-  let entries=getEntries().map(e=>e.date===date?{...e,photo:null}:e);
-  saveEntries(entries);render();
-};
-window.importCSV=function(input){
-  const file=input.files[0];if(!file)return;
+window.delPhoto=function(date){sE(gE().map(x=>x.date===date?{...x,photo:null}:x));render();};
+window.impCSV=function(inp){
+  const file=inp.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=e=>{
+  reader.onload=ev=>{
     try{
-      const parsed=parseVeSync(e.target.result);
-      if(!parsed.length){alert('No data found. Make sure it is a VeSync/Etekcity export.');return;}
-      const byDate={};
-      [...getEntries(),...parsed].forEach(r=>{byDate[r.date]=r;});
-      saveEntries(Object.values(byDate).sort((a,b)=>a.date.localeCompare(b.date)));
-      alert('✅ Imported '+parsed.length+' readings!');
-      render();
-    }catch{alert('Import failed.');}
+      const lines=ev.target.result.trim().split('\n');
+      const results=[];
+      for(let i=1;i<lines.length;i++){
+        const row=lines[i].replace(/^"|"$/g,'').split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+        if(row.length<2)continue;
+        const timeStr=row[0].replace(/"/g,'').trim();
+        const wRaw=row[1].replace(/lb/gi,'').trim();
+        const bfRaw=row[3]?.replace(/%/g,'').trim();
+        const visRaw=row[6]?.trim();
+        const musRaw=row[8]?.replace(/%/g,'').trim();
+        const bmrRaw=row[12]?.replace(/kcal/gi,'').trim();
+        const bmiRaw=row[2]?.trim();
+        const dt=new Date(timeStr);if(isNaN(dt))continue;
+        const date=dt.toISOString().split('T')[0];
+        const weight=parseFloat(wRaw);if(isNaN(weight))continue;
+        results.push({date,weight:Math.round(weight*10)/10,time:dt.getHours()<12?'morning':'night',
+          bodyFat:bfRaw&&bfRaw!=='--'?parseFloat(bfRaw):null,
+          bmi:bmiRaw&&bmiRaw!=='--'?parseFloat(bmiRaw):null,
+          visceralFat:visRaw&&visRaw!=='--'?parseFloat(visRaw):null,
+          musclePct:musRaw&&musRaw!=='--'?parseFloat(musRaw):null,
+          bmr:bmrRaw&&bmrRaw!=='--'?parseInt(bmrRaw):null,
+          note:'',photo:null,_t:dt.getTime()});
+      }
+      const byDate={};results.forEach(r=>{if(!byDate[r.date]||r._t<byDate[r.date]._t)byDate[r.date]=r;});
+      const parsed=Object.values(byDate).map(({_t,...r})=>r);
+      if(!parsed.length){alert('No data found.');return;}
+      const byDate2={};[...gE(),...parsed].forEach(r=>{byDate2[r.date]=r;});
+      sE(Object.values(byDate2).sort((a,b)=>a.date.localeCompare(b.date)));
+      alert('✅ Imported '+parsed.length+' readings!');render();
+    }catch(e){alert('Import failed. Check file format.');}
   };
   reader.readAsText(file);
 };
 
-
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-const lastProfile=ls('wt_last_profile',null);
-if(lastProfile){
-  const found=profiles.find(p=>p.id===lastProfile.id);
-  if(found){ currentProfile=found; currentPalette=found.palette||'primary'; }
-}
-
+// ── init ──────────────────────────────────────────────────
+window.addEventListener('resize',()=>{if(profile&&tab==='chart')drawChart();});
+const last=gl('wt_last',null);
+if(last){const found=profiles.find(x=>x.id===last.id);if(found){profile=found;palette=found.palette||'primary';}}
 render();
-window.addEventListener('resize', ()=>{ if(currentTab==='chart') renderChart(); });
 </script>
 </body>
 </html>
