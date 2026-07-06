@@ -945,8 +945,11 @@ function drawChart(){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,W,H);
+
   if(!s.length){
-    ctx.fillStyle=q.muted; ctx.font='14px system-ui'; ctx.textAlign='center';
+    ctx.fillStyle='#888'; ctx.font='14px system-ui'; ctx.textAlign='center';
     ctx.fillText('Add entries to see your chart.',W/2,H/2);
     return;
   }
@@ -998,9 +1001,9 @@ function drawChart(){
   const bW=()=>Math.max(2,CW/N*0.7);
   const yP=v=>PAD.t+(1-(v-vMin)/vR)*CH;
 
-  // Grid lines
-  ctx.strokeStyle=q.border+'33'; ctx.lineWidth=1;
-  ctx.font='10px system-ui'; ctx.fillStyle=q.faint; ctx.textAlign='right';
+  // Grid lines — always dark on white background
+  ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1;
+  ctx.font='10px system-ui'; ctx.fillStyle='#888'; ctx.textAlign='right';
   for(let i=0;i<=5;i++){
     const v=vMin+(vR*i/5); const y=yP(v);
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+CW,y); ctx.stroke();
@@ -1008,13 +1011,13 @@ function drawChart(){
   }
 
   // X labels
-  ctx.fillStyle=q.faint; ctx.textAlign='center';
+  ctx.fillStyle='#888'; ctx.textAlign='center';
   const step=Math.max(1,Math.ceil(N/7));
   lbs?.forEach((l,i)=>{ if(i%step===0) ctx.fillText(l,xP(i),H-PAD.b+14); });
 
   // Zero line for rate
   if(chartType==='rate'){
-    ctx.strokeStyle=q.border; ctx.lineWidth=1.5; ctx.setLineDash([]);
+    ctx.strokeStyle='#333'; ctx.lineWidth=1.5; ctx.setLineDash([]);
     ctx.beginPath(); ctx.moveTo(PAD.l,yP(0)); ctx.lineTo(PAD.l+CW,yP(0)); ctx.stroke();
   }
 
