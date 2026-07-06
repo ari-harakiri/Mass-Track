@@ -426,13 +426,6 @@ function renderProfileCard(prof, entryCount){
         </div>
       </div>
 
-      <!-- Enter button (shows after selection) -->
-      <div id="enter-${prof.id}" style="display:none;padding:0 16px 14px;">
-        <button onclick="enterApp('${prof.id}')"
-          style="width:100%;background:${pp.main};color:${pp.btntxt};border:2px solid ${pp.border};border-radius:9px;padding:12px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:2px 2px 0 ${pp.shadow};">
-          Enter as ${prof.name} →
-        </button>
-      </div>
 
     </div>
   </div>`;
@@ -445,18 +438,6 @@ function renderProfileCard(prof, entryCount){
 const pendingEdits = {};
 
 window.selectProfile = function(id){
-  const prof = profiles.find(x=>x.id===id);
-  if(!prof) return;
-  // Switch entire page to this profile's theme
-  currentPalette = prof.palette||'primary';
-  applyPalette(currentPalette);
-  // Hide all enter buttons, show this one
-  profiles.forEach(p=>{ const el=document.getElementById('enter-'+p.id); if(el)el.style.display='none'; });
-  const el=document.getElementById('enter-'+id);
-  if(el)el.style.display='block';
-};
-
-window.enterApp = function(id){
   currentProfile = profiles.find(x=>x.id===id);
   currentPalette = currentProfile.palette||'primary';
   tempPalette = null;
@@ -620,6 +601,7 @@ function renderApp(){
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
       <button class="btn btn-sm btn-grn" onclick="document.getElementById('csvFile').click()">📥 Import CSV</button>
+      <button class="btn btn-sm" onclick="exportCSV()" style="background:var(--green);">📤 Export CSV</button>
       <button class="btn btn-sm btn-acc" onclick="window.print()">🖨️ Print</button>
     </div>
   </div>
@@ -719,6 +701,7 @@ function renderApp(){
     <div class="card" style="padding:12px 8px 10px;">
       <div class="chart-box"><canvas id="MC"></canvas></div>
       <div class="legend" id="LEG"></div>
+      <button onclick="exportChart()" class="btn btn-sm btn-neu" style="margin-top:10px;border:2px solid var(--border);">📷 Save Chart as Image</button>
     </div>`:''}
   </div>
 
@@ -841,7 +824,7 @@ function renderApp(){
 
 function renderEntryList(s){
   if(!s.length) return '<div class="card" style="text-align:center;color:var(--muted);padding:40px 0;">No entries yet.</div>';
-  return [...s].reverse().slice(0,60).map(x=>`
+  return [...s].reverse().map(x=>`
     <div class="entry">
       <div>
         <div style="font-size:12px;color:var(--muted);">${x.date} ${x.time==='morning'?'☀️':'🌙'}</div>
@@ -1224,6 +1207,46 @@ window.importCSV = function(inp){
   };
   reader.readAsText(file);
   inp.value='';
+};
+
+// ═══════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════
+window.exportCSV = function(){
+  const e=getEntries();
+  const s=sorted(e);
+  if(!s.length){ alert('No entries to export.'); return; }
+
+  const headers=['Date','Time','Weight (lbs)','Body Fat %','Muscle %','Visceral Fat','BMI','BMR','Note'];
+  const rows=s.map(x=>[
+    x.date,
+    x.time||'',
+    x.weight??'',
+    x.bodyFat??'',
+    x.musclePct??'',
+    x.visceralFat??'',
+    x.bmi??'',
+    x.bmr??'',
+    (x.note||'').replace(/,/g,';'),
+  ]);
+
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`${currentProfile.name.replace(/\s+/g,'-')}-mass-track-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.exportChart = function(){
+  const canvas=document.getElementById('MC');
+  if(!canvas){ alert('No chart visible.'); return; }
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');
+  a.download=`${currentProfile.name.replace(/\s+/g,'-')}-chart-${chartMetric}-${new Date().toISOString().split('T')[0]}.png`;
+  a.click();
 };
 
 // ═══════════════════════════════════
