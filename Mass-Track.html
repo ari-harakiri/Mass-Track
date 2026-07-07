@@ -1211,18 +1211,18 @@ function renderQigong(){
     </div>
     <div class="card" style="margin-bottom:14px;">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Full Routine</div>
-      <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px;border:2px solid var(--border);">
-        <iframe src="https://player.vimeo.com/video/1207919019?loop=1&muted=1&controls=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>
+      <div style="border-radius:10px;border:2px solid var(--border);overflow:hidden;">
+        <iframe src="https://player.vimeo.com/video/1207919019?loop=1&autoplay=1&muted=1&controls=1" style="width:100%;aspect-ratio:16/9;display:block;border:0;" allowfullscreen loading="lazy"></iframe>
       </div>
     </div>
     ${QIGONG.map((move,i)=>{
-      const embedUrl='https://player.vimeo.com/video/'+move.vid+'?loop=1&muted=1&controls=1';
+      const embedUrl='https://player.vimeo.com/video/'+move.vid+'?loop=1&autoplay=1&muted=1&controls=1';
       return`<div class="ex-card">
         <div class="ex-title">${move.name}</div>
         <div class="ex-meta" style="margin-bottom:8px;">${move.reps}</div>
         <div class="ex-desc" style="margin-bottom:12px;">${move.desc}</div>
-        <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px;border:2px solid var(--border);">
-          <iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>
+        <div style="border-radius:10px;border:2px solid var(--border);overflow:hidden;">
+          <iframe src="${embedUrl}" style="width:100%;aspect-ratio:9/16;max-height:480px;display:block;border:0;" allowfullscreen loading="lazy"></iframe>
         </div>
       </div>`;
     }).join('')}
