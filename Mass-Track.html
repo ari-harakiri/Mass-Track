@@ -1718,43 +1718,31 @@ function renderSyncModal(html){
 
 window.closeSyncPanel = function(){ if(_syncModal)_syncModal.style.display='none'; };
 
-window.openSyncPanel = function(){
-  const fbConfig = gl('mt_fb_config', null);
-  if(!fbConfig){
-    renderSyncModal(renderFirebaseSetup());
-    return;
-  }
+window.openSyncPanel = async function(){
   if(window._fbUser){
     renderSyncModal(renderSyncSignedIn());
-  } else {
-    renderSyncModal(renderSyncSignIn());
+    return;
   }
+  // Load Firebase now (only when user taps Sync)
+  if(!window._fbReady){
+    const cfg=JSON.parse('{"apiKey":"AIzaSyDOzcUBs6NKXcU5bfBDGsbFrrHhW3i4fbs","authDomain":"mass-track.firebaseapp.com","projectId":"mass-track","storageBucket":"mass-track.firebasestorage.app","messagingSenderId":"736602201809","appId":"1:736602201809:web:9df0e0aee2af32b67d6ff0","measurementId":"G-36KN4R2EKE"}');
+    sl('mt_fb_config',cfg);
+    renderSyncModal('<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:40px;text-align:center;color:var(--muted);">Connecting…</div>');
+    try{
+      await Promise.race([
+        loadFirebase(cfg),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Could not connect. Check your internet connection.')),8000))
+      ]);
+    }catch(e){
+      renderSyncModal('<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:24px;max-width:380px;width:100%;"><div style="font-size:16px;font-weight:800;color:var(--accent);margin-bottom:10px;">Connection Failed</div><div style="font-size:13px;color:var(--muted);margin-bottom:16px;">'+e.message+'</div><button onclick="closeSyncPanel()" style="background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:inherit;">Close</button></div>');
+      return;
+    }
+  }
+  renderSyncModal(renderSyncSignIn());
 };
 
 function renderFirebaseSetup(){
-  return `<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:24px;max-width:440px;width:100%;box-shadow:6px 6px 0 var(--shadow);">
-    <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:6px;">☁️ Cloud Sync Setup</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Save your data to the cloud so you can access it on any device. Requires a free Firebase account.</div>
-    <div style="background:var(--inp);border:2px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Setup Steps</div>
-      <div style="font-size:12px;color:var(--muted);line-height:2;">
-        1. Go to <strong>console.firebase.google.com</strong><br>
-        2. Create a new project — name it anything you like (e.g. mass-track)<br>
-        3. Click <strong>Add app</strong> → choose the <strong>&lt;/&gt; Web</strong> icon (this just means "browser app" — not your website)<br>
-        4. When asked about npm or script tag, choose <strong>script tag</strong> or <strong>CDN</strong><br>
-        5. Enable <strong>Authentication</strong> → Google + Email/Password<br>
-        6. Create a <strong>Firestore Database</strong> (start in test mode)<br>
-        7. Copy your <strong>Firebase config</strong> JSON and paste below
-      </div>
-    </div>
-    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;">Firebase Config (paste JSON)</div>
-    <textarea id="fbConfigInput" style="width:100%;height:140px;background:var(--inp);border:2px solid var(--border);border-radius:9px;color:var(--inptxt);padding:10px;font-size:11px;font-family:monospace;outline:none;resize:vertical;" placeholder="Paste your Firebase config here — either the raw JavaScript snippet from Firebase Console or just the JSON object. Both formats work."></textarea>
-    <div id="fbSetupErr" style="font-size:12px;color:var(--accent);margin-top:6px;display:none;"></div>
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <button onclick="saveFirebaseConfig()" style="flex:1;background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Connect</button>
-      <button onclick="closeSyncPanel()" style="flex:1;background:var(--neu);color:var(--neutxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Cancel</button>
-    </div>
-  </div>`;
+  return renderSyncSignIn();
 }
 
 function renderSyncSignIn(){
@@ -1773,9 +1761,8 @@ function renderSyncSignIn(){
       <button onclick="signInEmail()" style="flex:1;background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Sign In</button>
       <button onclick="signUpEmail()" style="flex:1;background:var(--neu);color:var(--neutxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Create Account</button>
     </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="closeSyncPanel()" style="flex:1;background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;padding:8px;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
-      <button onclick="resetFirebaseConfig()" style="flex:1;background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;padding:8px;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;">Change Config</button>
+        <div style="text-align:center;">
+      <button onclick="closeSyncPanel()" style="background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;padding:8px;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
     </div>
   </div>`;
 }
@@ -1951,11 +1938,7 @@ window.syncFromCloud = async function(){
   }catch(e){if(statusEl)statusEl.textContent='Error: '+e.message;}
 };
 
-// Auto-init Firebase if config already saved
-(async()=>{
-  const cfg=gl('mt_fb_config',null);
-  if(cfg){try{await loadFirebase(cfg);}catch(e){console.warn('Firebase auto-init failed:',e.message);}}
-})();
+// Firebase loads only when user taps Sync — never on startup
 
 // ═══════════════════════════════
 // INIT
