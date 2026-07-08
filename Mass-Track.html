@@ -189,7 +189,7 @@ let profiles=gl('mt_profiles',[{id:'p0',name:'Me',icon:'⭐',palette:'primary',p
 let currentProfile=null;
 let currentPalette='primary';
 let tempPalette=null;
-let activeTab='chart';
+let activeTab=gl('mt_activeTab','chart');
 let chartMetric='weight';
 let chartType='line';
 let logTime='morning';
@@ -198,8 +198,8 @@ let dateFrom='';
 let dateTo='';
 let logPage=0;
 let actPage=0;
-let logSubTab='weight';
-let fitnessSubTab='qigong';
+let logSubTab=gl('mt_logSubTab','weight');
+let fitnessSubTab=gl('mt_fitnessSubTab','qigong');
 let fitChartMetric='miles';
 const pendingEdits={};
 
@@ -664,7 +664,7 @@ function renderLogTab(){
 
   return`<div>
     <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;">
-      ${[['weight','Weight'],['measures','Measures'],['checkin','Daily Check-In']].map(([k,l])=>`<button class="ftab ${logSubTab===k?'on':'off'}" onclick="logSubTab='${k}';render();">${l}</button>`).join('')}
+      ${[['weight','Weight'],['measures','Measures'],['checkin','Daily Check-In']].map(([k,l])=>`<button class="ftab ${logSubTab===k?'on':'off'}" onclick="logSubTab='${k}';sl('mt_logSubTab','${k}');render();">${l}</button>`).join('')}
     </div>
 
     ${logSubTab==='weight'?`
@@ -863,7 +863,7 @@ function renderFitnessTab(){
 
   return`<div>
     <div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;">
-      ${[['qigong','Warmup'],['mobility','Mobility Flow'],['today',"Today's Workout"],['charts','Fitness Charts'],['progress','Progress']].map(([k,l])=>`<button class="ftab ${fitnessSubTab===k?'on':'off'}" onclick="fitnessSubTab='${k}';render();">${l}</button>`).join('')}
+      ${[['qigong','Warmup'],['mobility','Mobility Flow'],['today',"Today's Workout"],['charts','Fitness Charts'],['progress','Progress']].map(([k,l])=>`<button class="ftab ${fitnessSubTab===k?'on':'off'}" onclick="fitnessSubTab='${k}';sl('mt_fitnessSubTab','${k}');render();">${l}</button>`).join('')}
     </div>
     ${fitnessSubTab==='today'?renderTodayWorkout(day,exercises,todayFit):''}
     ${fitnessSubTab==='charts'?renderFitnessCharts():''}
@@ -976,6 +976,7 @@ function renderFitnessLog(fe, pageSize, page){
   const wtEntries = getWtLog().map(x=>({
     date:x.date,
     actId:'wt_'+x.ts,
+    ts:x.ts,
     type:'Weight Training',
     exercise:x.exercise,
     sets:x.sets,
@@ -1484,7 +1485,7 @@ function drawTree(streakDays){
 // ═══════════════════════════════
 // APP ACTIONS
 // ═══════════════════════════════
-window.setTab=function(t){activeTab=t;render();};
+window.setTab=function(t){activeTab=t;sl('mt_activeTab',t);render();};
 window.setMetric=function(m){chartMetric=m;render();};
 window.setDP=function(k){datePreset=k;if(k!=='custom'){dateFrom='';dateTo='';}logPage=0;render();};
 window.setLogTime=function(t){logTime=t;const a=document.getElementById('bAM'),b=document.getElementById('bPM');if(a)a.className=t==='morning'?'am':'';if(b)b.className=t==='night'?'pm':'';};
