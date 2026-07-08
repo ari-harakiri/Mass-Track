@@ -73,6 +73,7 @@ canvas{display:block;width:100%!important;}
 .ftab.on{background:var(--main);color:var(--btntxt);border-color:var(--border);}
 .ftab.off{background:var(--card);color:var(--muted);}
 </style>
+  <!-- Firebase loaded dynamically when user provides config -->
 </head>
 <body>
 <div id="root"></div>
@@ -80,6 +81,8 @@ canvas{display:block;width:100%!important;}
 // ═══════════════════════════════
 // STORAGE
 // ═══════════════════════════════
+// Firebase state
+window._fbReady=false;window._fbUser=null;window._fbDb=null;window._fbAuth=null;
 function gl(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
 function sl(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
@@ -205,7 +208,13 @@ const pendingEdits={};
 // ═══════════════════════════════
 function pk(k){return 'mt_'+currentProfile.id+'_'+k;}
 function getEntries(){return gl(pk('entries'),[]);}
-function getMeas(){return gl(pk('meas'),[]);}
+function getMeas(){
+  let m=gl(pk('meas'),[]);
+  let changed=false;
+  m=m.map(x=>{if(!x.id){changed=true;return{...x,id:Date.now()+Math.random()};}return x;});
+  if(changed)sl(pk('meas'),m);
+  return m;
+}
 function getGoal(){return gl(pk('goal'),150);}
 function getBfGoal(){return gl(pk('bfgoal'),25);}
 function getFitEntries(){return gl(pk('fit'),[]);}
@@ -330,8 +339,6 @@ function renderProfiles(){
   <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Tap your name to continue.</div>
   ${profiles.map(prof=>renderProfileCard(prof,allPals)).join('')}
   ${profiles.length<MAX_PROFILES?`<button class="btn btn-grn" onclick="addProfile()" style="margin-top:4px;">+ Add person (${profiles.length}/${MAX_PROFILES})</button>`:''}
-  <div style="margin-top:14px;"><button class="btn btn-neu" style="border:2px solid var(--border);" onclick="openThemeBuilder()">+ Create Custom Theme</button></div>
-  <div id="themeBuilderPanel" style="display:none;margin-top:14px;" class="card"></div>
   </div>`;
 }
 
@@ -400,25 +407,14 @@ function renderProfileCard(prof,allPals){
 }
 
 // ═══════════════════════════════
-// THEME BUILDER
-// ═══════════════════════════════
-window.openThemeBuilder=function(){
-  const panel=document.getElementById('themeBuilderPanel');if(!panel)return;
-  panel.style.display='block';
-  panel.innerHTML=`<div class="sec">Custom Theme Builder</div>
-    <input id="cpalName" class="inp" placeholder="Theme name (e.g. Aqua)" style="margin-bottom:12px;">
-    <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;">Base on an existing theme:</div>
-    <select id="cpalBase" class="inp" style="margin-bottom:14px;" onchange="loadBaseTheme()"><option value="">-- Pick a base theme --</option>${Object.entries(DEFAULT_PALS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('')}</select>
-    <div id="colorFields">${PAL_KEYS.map(([k,l])=>`<div class="color-row"><span class="color-label">${l}</span><input type="color" id="cp-${k}" value="#ffffff" style="border:2px solid var(--border);border-radius:6px;width:44px;height:36px;cursor:pointer;padding:2px;background:var(--inp);"></div>`).join('')}</div>
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <button onclick="saveCustomPal()" style="flex:1;background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">Save Theme</button>
-      <button onclick="document.getElementById('themeBuilderPanel').style.display='none'" style="flex:1;background:var(--neu);color:var(--neutxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">Cancel</button>
-    </div>`;
-};
+
 
 window.loadBaseThemeFor=function(profId){
   const k=document.getElementById('cpalBase-'+profId)?.value;if(!k)return;
   const base=DEFAULT_PALS[k];if(!base)return;
+  // Auto-populate theme name from preset
+  const nameEl=document.getElementById('cpalName-'+profId);
+  if(nameEl&&!nameEl.value)nameEl.value=base.name.replace(/[^a-zA-Z0-9 ]/g,'').trim();
   PAL_KEYS.forEach(([pk])=>{const el=document.getElementById('cp-'+profId+'-'+pk);if(el&&base[pk]&&base[pk].startsWith('#'))el.value=base[pk];});
 };
 
@@ -434,20 +430,7 @@ window.saveCustomPalFor=function(profId){
   alert('Theme "'+name+'" saved!');render();
 };
 
-window.loadBaseTheme=function(){
-  const k=document.getElementById('cpalBase').value;if(!k)return;
-  const base=DEFAULT_PALS[k];
-  PAL_KEYS.forEach(([pk])=>{const el=document.getElementById('cp-'+pk);if(el&&base[pk]&&base[pk].startsWith('#'))el.value=base[pk];});
-};
-window.saveCustomPal=function(){
-  const name=document.getElementById('cpalName').value.trim();if(!name){alert('Please enter a theme name.');return;}
-  const p={name,bodyBg:null,font:null};
-  PAL_KEYS.forEach(([k])=>{const el=document.getElementById('cp-'+k);if(el)p[k]=el.value;});
-  const key='custom_'+name.toLowerCase().replace(/\s+/g,'_');
-  customPals[key]=p;sl('mt_custom_pals',customPals);
-  document.getElementById('themeBuilderPanel').style.display='none';
-  alert('Theme "'+name+'" saved!');render();
-};
+
 
 // ═══════════════════════════════
 // PROFILE ACTIONS
@@ -562,6 +545,7 @@ function renderApp(){
       <button class="btn btn-grn btn-sm" onclick="document.getElementById('csvFile').click()">Import CSV</button>
       <button class="btn btn-grn btn-sm" onclick="exportCSV()">Export CSV</button>
       <button class="btn btn-acc btn-sm" onclick="window.print()">Print</button>
+      <button class="btn btn-neu btn-sm" style="border:2px solid var(--border);" onclick="openSyncPanel()" id="syncBtn">${window._fbUser?'☁️ '+window._fbUser.displayName.split(' ')[0]:'☁️ Sync'}</button>
     </div>
   </div>
 
@@ -676,7 +660,7 @@ function renderLogTab(){
   const e=getEntries();
   const rangeE=applyRange(e);
   const fe=getFitEntries();
-  const todayFit=fe.find(x=>x.date===today())||{date:today(),miles:null,minutes:null,steps:null,exercise:false,stretch:false,warmup:false};
+  const todayFit=fe.find(x=>x.date===today())||{date:today(),miles:null,minutes:null,exercise:false,stretch:false,warmup:false};
 
   return`<div>
     <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;">
@@ -756,8 +740,7 @@ function renderLogTab(){
             ${[...Object.keys(ACTIVITY_CONFIG)].map(t=>`<option value="${t}">${t}</option>`).join('')}
           </select>
         </div>
-        <div id="fActFields">
-          <div class="g2" style="margin-bottom:8px;">
+        <div id="fActFields"><div class="g2" style="margin-bottom:8px;">
             <div id="fDistWrap"><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:3px;" id="fDistLabel">${dUnit()}</div><input type="number" id="fMiles" class="inp" placeholder="0.0"></div>
             <div><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:3px;">Minutes</div><input type="number" id="fMins" class="inp" placeholder="0"></div>
           </div>
@@ -876,7 +859,7 @@ function renderFitnessTab(){
   const day=todayDay();
   const exercises=WORKOUT[day]||WORKOUT.Sunday;
   const fe=getFitEntries();
-  const todayFit=fe.find(x=>x.date===today())||{date:today(),miles:null,minutes:null,steps:null,exercise:false,stretch:false,warmup:false};
+  const todayFit=fe.find(x=>x.date===today())||{date:today(),miles:null,minutes:null,exercise:false,stretch:false,warmup:false};
 
   return`<div>
     <div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;">
@@ -907,8 +890,11 @@ function renderTodayWorkout(day,exercises,todayFit){
       <div class="ex-desc">${ex.desc}</div>
     </div>`).join('')}
     <div class="card" style="margin-top:4px;">
-      <div class="sec">Daily Check-In — ${today()}</div>
-      <div>${[['warmup','Completed warm up'],['stretch','Completed stretch'],['exercise','Completed workout of the day']].map(([k,l])=>`<div class="check-row"><button class="check-box ${todayFit[k]?'done':''}" onclick="toggleFitCheck('${k}')">${todayFit[k]?'✓':''}</button><span style="font-size:14px;font-weight:600;color:var(--text);">${l}</span></div>`).join('')}</div>
+      <div class="sec">Daily Check-In</div>
+      <div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:3px;">Date</div><input type="date" id="ciDateTW" class="inp" value="${today()}"></div>
+      <div id="ciChecksTW">${renderChecklist(todayFit)}</div>
+      <button class="btn" style="margin-top:10px;" onclick="saveChecklistTW()">Save Check-In</button>
+      <div id="ciSavedTW" style="display:none;font-size:12px;color:var(--green);font-weight:700;margin-top:8px;text-align:center;">Saved!</div>
     </div>
 
     <!-- Activity Log -->
@@ -959,7 +945,7 @@ function renderTodayWorkout(day,exercises,todayFit){
       <div style="margin-bottom:8px;">
         <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:3px;">Exercise</div>
         <select id="rmEx" class="inp" onchange="toggleRmCustom()">
-          ${getAllExercises().map(e=>`<option value="${e}">${e}</option>`).join('')}
+          ${(()=>{const featured=['Bench Press','Squat','Romanian Deadlift','Clean'];const rest=getAllExercises().filter(e=>!featured.includes(e));return[...featured,...rest].map(e=>`<option value="${e}">${e}</option>`).join('');})()}
           <option value="__custom__">+ Custom…</option>
         </select>
       </div>
@@ -985,16 +971,40 @@ function renderTodayWorkout(day,exercises,todayFit){
 }
 function renderFitnessLog(fe, pageSize, page){
   pageSize = pageSize||30; page = page||actPage||0;
-  const rangeF=applyRange(fe.map(x=>({...x}))).sort((a,b)=>b.date.localeCompare(a.date));
+
+  // Merge activity entries with weight training sets
+  const wtEntries = getWtLog().map(x=>({
+    date:x.date,
+    actId:'wt_'+x.ts,
+    type:'Weight Training',
+    exercise:x.exercise,
+    sets:x.sets,
+    reps:x.reps,
+    weight:x.weight,
+    orm:x.orm,
+    note:x.note,
+    _isWt:true
+  }));
+  const merged = [...fe, ...wtEntries];
+  const rangeF=applyRange(merged.map(x=>({...x}))).sort((a,b)=>b.date.localeCompare(a.date)||((b.actId||'').toString()).localeCompare((a.actId||'').toString()));
   if(!rangeF.length)return '<div class="card" style="text-align:center;color:var(--muted);padding:40px 0;">No activity logged yet.</div>';
   const totalPages=Math.ceil(rangeF.length/pageSize);
   const pg=Math.min(page,Math.max(0,totalPages-1));
   const pageItems=rangeF.slice(pg*pageSize,(pg+1)*pageSize);
-  const rows=pageItems.map(x=>`<div class="entry"><div>
+  const rows=pageItems.map(x=>{
+    if(x._isWt){
+      return`<div class="entry"><div>
     <div style="font-size:12px;color:var(--muted);">${x.date}</div>
-    <div style="font-size:15px;font-weight:800;color:var(--text);">${x.type?x.type+' — ':''}${[x.miles!=null?x.miles+' '+dUnit():null,x.minutes!=null?x.minutes+' min':null,x.steps!=null?Number(x.steps).toLocaleString()+' steps':null].filter(Boolean).join(' · ')||'Check-in only'}</div>
+    <div style="font-size:15px;font-weight:800;color:var(--text);">🏋️ ${x.exercise}</div>
+    <div style="font-size:12px;color:var(--muted);">${x.sets} sets × ${x.reps} reps @ ${x.weight} ${wUnit()}${x.orm?' · Est. 1RM: '+x.orm+' '+wUnit():''}${x.note?' · '+x.note:''}</div>
+  </div><button class="del" onclick="delWtEntry('${x.date}',${x._ts||x.ts||0})">✕</button></div>`;
+    }
+    return`<div class="entry"><div>
+    <div style="font-size:12px;color:var(--muted);">${x.date}</div>
+    <div style="font-size:15px;font-weight:800;color:var(--text);">${x.type?x.type+' — ':''}${[x.miles!=null?x.miles+' '+dUnit():null,x.minutes!=null?x.minutes+' min':null].filter(Boolean).join(' · ')||'Check-in only'}</div>
     <div style="font-size:12px;color:var(--muted);">${[x.exercise?'Workout':'',x.warmup?'Qigong':'',x.stretch?'Mobility':''].filter(Boolean).join(' · ')||''}</div>
-  </div><button class="del" onclick="delFitEntry(${x.actId||0},'${x.date}')">✕</button></div>`).join('');
+  </div><button class="del" onclick="delFitEntry(${x.actId||0},'${x.date}')">✕</button></div>`;
+  }).join('');
   const pagination=totalPages>1?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;justify-content:center;">
     ${pg>0?`<button class="page-btn" onclick="actPage=${pg-1};render();">← Prev</button>`:''}
     ${Array.from({length:totalPages},(_,i)=>`<button class="page-btn ${i===pg?'on':''}" onclick="actPage=${i};render();">${i+1}</button>`).join('')}
@@ -1212,7 +1222,7 @@ function renderQigong(){
     <div class="card" style="margin-bottom:14px;">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Full Routine</div>
       <div style="border-radius:10px;border:2px solid var(--border);overflow:hidden;">
-        <iframe src="https://player.vimeo.com/video/1207919019?loop=1&autoplay=1&muted=1&controls=1" style="width:100%;aspect-ratio:16/9;display:block;border:0;" allowfullscreen loading="lazy"></iframe>
+        <iframe src="https://player.vimeo.com/video/1207919019?loop=1&autoplay=1&muted=1&controls=1" style="width:100%;aspect-ratio:9/16;max-height:480px;display:block;border:0;" allowfullscreen loading="lazy"></iframe>
       </div>
     </div>
     ${QIGONG.map((move,i)=>{
@@ -1518,10 +1528,24 @@ window.delMeas=function(id){sl(pk('meas'),getMeas().filter(x=>x.id!==id));render
 window.triggerEP=function(){const d=document.getElementById('pSel').value;if(!d)return;window._epd=d;document.getElementById('photoFile').click();};
 window.uploadEntryPhoto=function(inp){const file=inp.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{sl(pk('entries'),getEntries().map(x=>x.date===window._epd?{...x,photo:ev.target.result}:x));render();};reader.readAsDataURL(file);inp.value='';};
 window.delEP=function(date){sl(pk('entries'),getEntries().map(x=>x.date===date?{...x,photo:null}:x));render();};
+window.delWtEntry=function(date,ts){
+  sl(pk('wtlog'),getWtLog().filter(x=>!(x.date===date&&x.ts===ts)));render();
+};
 window.delFitEntry=function(actId, date){
   let fe=getFitEntries();
-  if(actId){fe=fe.filter(x=>x.actId!==actId);}
-  else{fe=fe.filter(x=>x.date!==date||x.actId);}
+  if(actId){
+    // pure activity entry — just remove it
+    fe=fe.filter(x=>x.actId!==actId);
+  } else {
+    // merged entry — clear activity fields but keep checkboxes
+    fe=fe.map(x=>{
+      if(x.date===date&&!x.actId){
+        const {miles,minutes,type,...rest}=x;
+        return rest;
+      }
+      return x;
+    });
+  }
   sl(pk('fit'),fe);render();
 };
 
@@ -1601,10 +1625,22 @@ window.saveChecklist=function(){
   render();
 };
 
+window.saveChecklistTW=function(){
+  const dateEl=document.getElementById('ciDateTW');
+  const date=dateEl?dateEl.value:today();
+  let fe=getFitEntries();
+  const idx=fe.findIndex(x=>x.date===date&&!x.actId);
+  if(idx<0){fe.push({date,exercise:false,stretch:false,warmup:false});sl(pk('fit'),fe);}
+  const saved=document.getElementById('ciSavedTW');
+  if(saved){saved.style.display='block';setTimeout(()=>{saved.style.display='none';},1500);}
+  render();
+};
+
 window.toggleFitCheck=function(key){
-  let fe=getFitEntries();const idx=fe.findIndex(x=>x.date===today());
+  const date=(document.getElementById('ciDate')||document.getElementById('ciDateTW'))?.value||today();
+  let fe=getFitEntries();const idx=fe.findIndex(x=>x.date===date&&!x.actId);
   if(idx>=0){fe[idx]={...fe[idx],[key]:!fe[idx][key]};}
-  else{fe.push({date:today(),miles:null,minutes:null,steps:null,exercise:false,stretch:false,warmup:false,[key]:true});}
+  else{fe.push({date,miles:null,minutes:null,exercise:false,stretch:false,warmup:false,[key]:true});}
   sl(pk('fit'),fe);render();
 };
 window.saveFitEntry=function(suffix){
@@ -1662,6 +1698,264 @@ window.importCSV=function(inp){
 };
 
 
+
+
+// ═══════════════════════════════════════
+// FIREBASE SYNC
+// ═══════════════════════════════════════
+let _syncModal = null;
+
+function renderSyncModal(html){
+  if(!_syncModal){
+    _syncModal = document.createElement('div');
+    _syncModal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    _syncModal.onclick = e=>{ if(e.target===_syncModal)closeSyncPanel(); };
+    document.body.appendChild(_syncModal);
+  }
+  _syncModal.innerHTML = html;
+  _syncModal.style.display = 'flex';
+}
+
+window.closeSyncPanel = function(){ if(_syncModal)_syncModal.style.display='none'; };
+
+window.openSyncPanel = function(){
+  const fbConfig = gl('mt_fb_config', null);
+  if(!fbConfig){
+    renderSyncModal(renderFirebaseSetup());
+    return;
+  }
+  if(window._fbUser){
+    renderSyncModal(renderSyncSignedIn());
+  } else {
+    renderSyncModal(renderSyncSignIn());
+  }
+};
+
+function renderFirebaseSetup(){
+  return `<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:24px;max-width:440px;width:100%;box-shadow:6px 6px 0 var(--shadow);">
+    <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:6px;">☁️ Cloud Sync Setup</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Save your data to the cloud so you can access it on any device. Requires a free Firebase account.</div>
+    <div style="background:var(--inp);border:2px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Setup Steps</div>
+      <div style="font-size:12px;color:var(--muted);line-height:2;">
+        1. Go to <strong>console.firebase.google.com</strong><br>
+        2. Create a new project — name it anything you like (e.g. mass-track)<br>
+        3. Click <strong>Add app</strong> → choose the <strong>&lt;/&gt; Web</strong> icon (this just means "browser app" — not your website)<br>
+        4. When asked about npm or script tag, choose <strong>script tag</strong> or <strong>CDN</strong><br>
+        5. Enable <strong>Authentication</strong> → Google + Email/Password<br>
+        6. Create a <strong>Firestore Database</strong> (start in test mode)<br>
+        7. Copy your <strong>Firebase config</strong> JSON and paste below
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;">Firebase Config (paste JSON)</div>
+    <textarea id="fbConfigInput" style="width:100%;height:140px;background:var(--inp);border:2px solid var(--border);border-radius:9px;color:var(--inptxt);padding:10px;font-size:11px;font-family:monospace;outline:none;resize:vertical;" placeholder="Paste your Firebase config here — either the raw JavaScript snippet from Firebase Console or just the JSON object. Both formats work."></textarea>
+    <div id="fbSetupErr" style="font-size:12px;color:var(--accent);margin-top:6px;display:none;"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button onclick="saveFirebaseConfig()" style="flex:1;background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Connect</button>
+      <button onclick="closeSyncPanel()" style="flex:1;background:var(--neu);color:var(--neutxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function renderSyncSignIn(){
+  return `<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:6px 6px 0 var(--shadow);">
+    <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:6px;">☁️ Sign In</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Sign in to sync your data across devices.</div>
+    <button onclick="signInGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:2px solid #ddd;border-radius:9px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px;font-family:inherit;">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/></svg>
+      Continue with Google
+    </button>
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin:10px 0;">or</div>
+    <input type="email" id="fbEmail" class="inp" placeholder="Email" style="margin-bottom:8px;">
+    <input type="password" id="fbPass" class="inp" placeholder="Password" style="margin-bottom:10px;">
+    <div id="fbSignInErr" style="font-size:12px;color:var(--accent);margin-bottom:8px;display:none;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button onclick="signInEmail()" style="flex:1;background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Sign In</button>
+      <button onclick="signUpEmail()" style="flex:1;background:var(--neu);color:var(--neutxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Create Account</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeSyncPanel()" style="flex:1;background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;padding:8px;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button onclick="resetFirebaseConfig()" style="flex:1;background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;padding:8px;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;">Change Config</button>
+    </div>
+  </div>`;
+}
+
+function renderSyncSignedIn(){
+  const user = window._fbUser;
+  return `<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:6px 6px 0 var(--shadow);">
+    <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px;">☁️ Cloud Sync</div>
+    <div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:16px;">✓ Signed in as ${user.email}</div>
+    <div style="background:var(--inp);border:2px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:6px;">Sync Status</div>
+      <div id="syncStatus" style="font-size:12px;color:var(--muted);">Ready to sync.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button onclick="syncToCloud()" style="background:var(--main);color:var(--btntxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">↑ Upload to Cloud</button>
+      <button onclick="syncFromCloud()" style="background:var(--neu);color:var(--neutxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">↓ Download from Cloud</button>
+      <button onclick="signOutFb()" style="background:var(--acc2);color:var(--acctxt);border:2px solid var(--border);border-radius:9px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Out</button>
+      <button onclick="closeSyncPanel()" style="background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;padding:8px;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;">Close</button>
+    </div>
+  </div>`;
+}
+
+window.saveFirebaseConfig = async function(){
+  const raw = document.getElementById('fbConfigInput')?.value.trim();
+  const errEl = document.getElementById('fbSetupErr');
+  if(!raw){if(errEl){errEl.textContent='Please paste your Firebase config.';errEl.style.display='block';}return;}
+  try{
+    // Accept raw JS snippet (const firebaseConfig = {...}) or plain JSON
+    let jsonStr = raw;
+    // Strip JS variable assignment if present
+    jsonStr = jsonStr.replace(/\/\/[^\n]*/g,''); // remove comments
+    jsonStr = jsonStr.replace(/const\s+\w+\s*=\s*/,''); // remove const x =
+    jsonStr = jsonStr.replace(/;?\s*$/,''); // remove trailing semicolon
+    // Quote unquoted keys (apiKey: -> "apiKey":)
+    jsonStr = jsonStr.replace(/([{,]\s*)(\w+)(\s*:)/g,'$1"$2"$3');
+    const cfg = JSON.parse(jsonStr);
+    if(!cfg.apiKey||!cfg.authDomain||!cfg.projectId){throw new Error('Missing required fields (apiKey, authDomain, projectId)');}
+    sl('mt_fb_config', cfg);
+    await loadFirebase(cfg);
+    renderSyncModal(renderSyncSignIn());
+  }catch(e){
+    if(errEl){errEl.textContent='Could not parse config: '+e.message;errEl.style.display='block';}
+  }
+};
+
+window.resetFirebaseConfig = function(){
+  sl('mt_fb_config', null);
+  renderSyncModal(renderFirebaseSetup());
+};
+
+async function loadFirebase(cfg){
+  if(window._fbReady) return;
+  // Dynamically load Firebase compat SDK
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js');
+  if(!firebase.apps.length) firebase.initializeApp(cfg);
+  window._fbAuth = firebase.auth();
+  window._fbDb = firebase.firestore();
+  window._fbReady = true;
+  window._fbAuth.onAuthStateChanged(user=>{
+    window._fbUser = user;
+    const btn = document.getElementById('syncBtn');
+    if(btn) btn.textContent = user ? '☁️ '+user.displayName?.split(' ')[0]||user.email.split('@')[0] : '☁️ Sync';
+  });
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);
+  });
+}
+
+window.signInGoogle = async function(){
+  try{
+    const cfg=gl('mt_fb_config',null);if(!cfg)return;
+    await loadFirebase(cfg);
+    const provider=new firebase.auth.GoogleAuthProvider();
+    await window._fbAuth.signInWithPopup(provider);
+    window._fbUser=window._fbAuth.currentUser;
+    renderSyncModal(renderSyncSignedIn());
+  }catch(e){const el=document.getElementById('fbSignInErr');if(el){el.textContent=e.message;el.style.display='block';}}
+};
+
+window.signInEmail = async function(){
+  const email=document.getElementById('fbEmail')?.value;
+  const pass=document.getElementById('fbPass')?.value;
+  const errEl=document.getElementById('fbSignInErr');
+  try{
+    const cfg=gl('mt_fb_config',null);if(!cfg)return;
+    await loadFirebase(cfg);
+    await window._fbAuth.signInWithEmailAndPassword(email,pass);
+    window._fbUser=window._fbAuth.currentUser;
+    renderSyncModal(renderSyncSignedIn());
+  }catch(e){if(errEl){errEl.textContent=e.message;errEl.style.display='block';}}
+};
+
+window.signUpEmail = async function(){
+  const email=document.getElementById('fbEmail')?.value;
+  const pass=document.getElementById('fbPass')?.value;
+  const errEl=document.getElementById('fbSignInErr');
+  try{
+    const cfg=gl('mt_fb_config',null);if(!cfg)return;
+    await loadFirebase(cfg);
+    await window._fbAuth.createUserWithEmailAndPassword(email,pass);
+    window._fbUser=window._fbAuth.currentUser;
+    renderSyncModal(renderSyncSignedIn());
+  }catch(e){if(errEl){errEl.textContent=e.message;errEl.style.display='block';}}
+};
+
+window.signOutFb = async function(){
+  try{
+    await window._fbAuth.signOut();
+    window._fbUser=null;
+    const btn=document.getElementById('syncBtn');
+    if(btn)btn.textContent='☁️ Sync';
+    closeSyncPanel();
+  }catch(e){console.error(e);}
+};
+
+window.syncToCloud = async function(){
+  const statusEl=document.getElementById('syncStatus');
+  if(!window._fbUser||!window._fbDb){if(statusEl)statusEl.textContent='Not signed in.';return;}
+  if(statusEl)statusEl.textContent='Uploading…';
+  try{
+    const uid=window._fbUser.uid;
+    const db=window._fbDb;
+    // Save profiles
+    await db.collection('users').doc(uid).set({profiles,updatedAt:Date.now()});
+    // Save each profile's data
+    for(const p of profiles){
+      const data={
+        entries:gl('mt_'+p.id+'_entries',[]),
+        meas:gl('mt_'+p.id+'_meas',[]),
+        fit:gl('mt_'+p.id+'_fit',[]),
+        wtlog:gl('mt_'+p.id+'_wtlog',[]),
+        wtcustom:gl('mt_'+p.id+'_wtcustom',[]),
+        goal:gl('mt_'+p.id+'_goal',150),
+        bfgoal:gl('mt_'+p.id+'_bfgoal',25),
+      };
+      await db.collection('users').doc(uid).collection('data').doc(p.id).set(data);
+    }
+    if(statusEl)statusEl.textContent='✓ Uploaded successfully at '+new Date().toLocaleTimeString();
+  }catch(e){if(statusEl)statusEl.textContent='Error: '+e.message;}
+};
+
+window.syncFromCloud = async function(){
+  const statusEl=document.getElementById('syncStatus');
+  if(!window._fbUser||!window._fbDb){if(statusEl)statusEl.textContent='Not signed in.';return;}
+  if(statusEl)statusEl.textContent='Downloading…';
+  try{
+    const uid=window._fbUser.uid;const db=window._fbDb;
+    const userDoc=await db.collection('users').doc(uid).get();
+    if(!userDoc.exists){if(statusEl)statusEl.textContent='No cloud data found.';return;}
+    const cloudData=userDoc.data();
+    if(cloudData.profiles){profiles=cloudData.profiles;sl('mt_profiles',profiles);}
+    // Download each profile's data
+    for(const p of profiles){
+      const snap=await db.collection('users').doc(uid).collection('data').doc(p.id).get();
+      if(!snap.exists)continue;
+      const d=snap.data();
+      if(d.entries)sl('mt_'+p.id+'_entries',d.entries);
+      if(d.meas)sl('mt_'+p.id+'_meas',d.meas);
+      if(d.fit)sl('mt_'+p.id+'_fit',d.fit);
+      if(d.wtlog)sl('mt_'+p.id+'_wtlog',d.wtlog);
+      if(d.wtcustom)sl('mt_'+p.id+'_wtcustom',d.wtcustom);
+      if(d.goal!=null)sl('mt_'+p.id+'_goal',d.goal);
+      if(d.bfgoal!=null)sl('mt_'+p.id+'_bfgoal',d.bfgoal);
+    }
+    if(statusEl)statusEl.textContent='✓ Downloaded at '+new Date().toLocaleTimeString();
+    closeSyncPanel();
+    render();
+  }catch(e){if(statusEl)statusEl.textContent='Error: '+e.message;}
+};
+
+// Auto-init Firebase if config already saved
+(async()=>{
+  const cfg=gl('mt_fb_config',null);
+  if(cfg){try{await loadFirebase(cfg);}catch(e){console.warn('Firebase auto-init failed:',e.message);}}
+})();
 
 // ═══════════════════════════════
 // INIT
