@@ -248,9 +248,10 @@ function mavg(data,key,w=5){
 function calcStats(e){
   const s=sorted(e);if(!s.length)return null;
   const ws=s.map(x=>x.weight);
-  const bfs=s.map(x=>x.bodyFat).filter(Boolean);
+  const bfs=s.map(x=>x.bodyFat).filter(x=>x!=null);
+  const bmrs=s.map(x=>x.bmr).filter(x=>x!=null);
   const cur=ws[ws.length-1];const last=s[s.length-1];
-  return{cur,min:Math.min(...ws),max:Math.max(...ws),avg:+(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1),chg:+(cur-ws[0]).toFixed(1),bf:last.bodyFat,bmi:last.bmi,muscle:last.musclePct,visceral:last.visceralFat,bmr:last.bmr,bfChg:bfs.length>1?+(last.bodyFat-bfs[0]).toFixed(1):null};
+  return{cur,min:Math.min(...ws),max:Math.max(...ws),avg:+(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1),chg:+(cur-ws[0]).toFixed(1),bf:last.bodyFat,bmi:last.bmi,muscle:last.musclePct,visceral:last.visceralFat,bmr:last.bmr,bfChg:bfs.length>1?+(last.bodyFat-bfs[0]).toFixed(1):null,bmrChg:bmrs.length>1?+(last.bmr-bmrs[0]).toFixed(0):null,bfAvg:bfs.length?+(bfs.reduce((a,b)=>a+b,0)/bfs.length).toFixed(1):null,bmrAvg:bmrs.length?Math.round(bmrs.reduce((a,b)=>a+b,0)/bmrs.length):null};
 }
 function bmiCat(b){if(!b)return null;const n=parseFloat(b);if(n<18.5)return{l:'Underweight',c:'#3b82f6'};if(n<25)return{l:'Normal',c:'#16a34a'};if(n<30)return{l:'Overweight',c:'#f59e0b'};return{l:'Obese',c:'#dc2626'};}
 function bfCatF(b){if(!b)return null;const n=parseFloat(b);if(n<14)return{l:'Essential',c:'#3b82f6'};if(n<21)return{l:'Athletic',c:'#16a34a'};if(n<25)return{l:'Fitness',c:'#84cc16'};if(n<32)return{l:'Average',c:'#f59e0b'};return{l:'Obese',c:'#dc2626'};}
@@ -558,9 +559,9 @@ function renderApp(){
   const rangeE=applyRange(e);
   const stAll=calcStats(sorted(e));
   const stRange=calcStats(rangeE);
-  const bmiI=stAll?.bmi?bmiCat(stAll.bmi):null;
-  const bfI=stAll?.bf?bfCat(stAll.bf):null;
-  const toG=stAll?(stAll.cur-g).toFixed(1):null;
+  const bmiI=stRange?.bmi?bmiCat(stRange.bmi):null;
+  const bfI=stRange?.bf?bfCat(stRange.bf):null;
+  const toG=stRange?(stRange.cur-g).toFixed(1):null;
 
   return`<div class="wrap">
   <input type="file" id="csvFile" accept=".csv,.txt" style="display:none;" onchange="importCSV(this)">
@@ -574,11 +575,15 @@ function renderApp(){
         <div class="av" style="width:36px;height:36px;font-size:18px;">${currentProfile.photo?`<img src="${currentProfile.photo}" style="width:100%;height:100%;object-fit:cover;">`:(currentProfile.icon||'⭐')}</div>
         <div style="font-size:22px;font-weight:900;color:var(--text);">${currentProfile.name}</div>
       </div>
-      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-        <div style="font-size:30px;font-weight:900;color:var(--main);">${stAll?wLabel(stAll.cur):'No data yet'}</div>
-        ${stAll?`<div style="font-size:13px;color:var(--muted);">${parseFloat(stAll.chg)<0?'↓ '+toDisplay(Math.abs(stAll.chg)):'↑ '+toDisplay(Math.abs(stAll.chg))} ${wUnit()} total${stAll.bf?' · '+stAll.bf+'% BF':''}${stAll.bmr?' · '+stAll.bmr+' BMR':''}</div>`:''}
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+        <div style="font-size:30px;font-weight:900;color:var(--main);">${stRange?wLabel(stRange.cur):'No data yet'}</div>
+        ${stRange?`<div style="font-size:13px;color:var(--muted);white-space:nowrap;">${parseFloat(stRange.chg)<0?'↓ '+toDisplay(Math.abs(stRange.chg)):'↑ '+toDisplay(Math.abs(stRange.chg))} ${wUnit()}</div>`:''}
       </div>
-      ${(currentProfile.heightFt||currentProfile.heightCm)?'<div style="font-size:12px;color:var(--faint);">'+ ((currentProfile.units||'imperial')==='imperial'?currentProfile.heightFt+"'"+(currentProfile.heightIn||0)+'"':currentProfile.heightCm+' cm') +'</div>':''}
+      <div style="font-size:12px;color:var(--faint);">${[
+        (currentProfile.heightFt||currentProfile.heightCm)?((currentProfile.units||'imperial')==='imperial'?currentProfile.heightFt+"'"+(currentProfile.heightIn||0)+'"':currentProfile.heightCm+' cm'):null,
+        stRange?.bf?stRange.bf+'% BF':null,
+        stRange?.bmr?stRange.bmr+' BMR':null
+      ].filter(Boolean).join(' · ')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
       <button class="btn btn-grn btn-sm" onclick="document.getElementById('csvFile').click()">Import CSV</button>
@@ -596,14 +601,14 @@ function renderApp(){
 
   <!-- Body Comp Toggle -->
   <button onclick="toggleSection('bcPanel',this)" class="btn btn-neu" style="border:3px solid var(--border);box-shadow:3px 3px 0 var(--shadow);font-size:13px;margin-bottom:10px;text-align:left;">
-    ▸ Body Composition${stAll?.bmi?' — BMI '+stAll.bmi+(bmiI?' ('+bmiI.l+')':''):''}
+    ▸ Body Composition${stRange?.bmi?' — BMI '+stRange.bmi+(bmiI?' ('+bmiI.l+')':''):''}
   </button>
   <div id="bcPanel" style="display:none;" class="card">
     <div class="g2" style="margin-bottom:10px;">
-      ${[{l:'BMI',v:stAll?.bmi??'—',c:bmiI?.c??'var(--main)',sub:bmiI?.l},{l:'Body Fat',v:stAll?.bf?stAll.bf+'%':'—',c:bfI?.c??'var(--main)',sub:bfI?.l},{l:'Muscle %',v:stAll?.muscle?stAll.muscle+'%':'—',c:'#15803d',sub:null},{l:'Visceral',v:stAll?.visceral??'—',c:stAll?.visceral>=10?'#dc2626':'#d97706',sub:stAll?.visceral>=10?'High':'OK'}].map(x=>`<div style="background:var(--inp);border:2px solid var(--border);border-radius:12px;padding:12px 14px;"><div style="font-size:10px;color:var(--faint);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${x.l}</div><div style="font-size:22px;font-weight:900;color:${x.c};">${x.v}</div>${x.sub?`<div style="font-size:11px;color:${x.c};font-weight:600;">${x.sub}</div>`:''}</div>`).join('')}
+      ${[{l:'BMI',v:stRange?.bmi??'—',c:bmiI?.c??'var(--main)',sub:bmiI?.l},{l:'Body Fat',v:stRange?.bf?stRange.bf+'%':'—',c:bfI?.c??'var(--main)',sub:bfI?.l},{l:'Muscle %',v:stRange?.muscle?stRange.muscle+'%':'—',c:'#15803d',sub:null},{l:'Visceral',v:stRange?.visceral??'—',c:stRange?.visceral>=10?'#dc2626':'#d97706',sub:stRange?.visceral>=10?'High':'OK'}].map(x=>`<div style="background:var(--inp);border:2px solid var(--border);border-radius:12px;padding:12px 14px;"><div style="font-size:10px;color:var(--faint);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${x.l}</div><div style="font-size:22px;font-weight:900;color:${x.c};">${x.v}</div>${x.sub?`<div style="font-size:11px;color:${x.c};font-weight:600;">${x.sub}</div>`:''}</div>`).join('')}
     </div>
-    ${stAll?.bmi?`<div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;">BMI Scale</div><div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 30%,#f59e0b 65%,#dc2626 100%);border:2px solid var(--border);position:relative;"><div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(stAll.bmi)-15)/25)*100))}%;width:10px;height:18px;background:var(--border);border-radius:3px;transform:translateX(-50%);"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px;"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div></div>`:''}
-    ${stAll?.bf?`<div><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;">Body Fat % (${currentProfile.sex==='male'?'Male':'Female'})</div><div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 25%,#84cc16 45%,#f59e0b 70%,#dc2626 100%);border:2px solid var(--border);position:relative;"><div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(stAll.bf)-(currentProfile.sex==='male'?3:10))/(currentProfile.sex==='male'?30:35))*100))}%;width:10px;height:18px;background:var(--border);border-radius:3px;transform:translateX(-50%);"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px;">${currentProfile.sex==='male'?'<span>6%</span><span>14%</span><span>18%</span><span>25%</span><span>33%</span>':'<span>14%</span><span>21%</span><span>25%</span><span>32%</span><span>45%</span>'}</div></div>`:''}
+    ${stRange?.bmi?`<div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;">BMI Scale</div><div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 30%,#f59e0b 65%,#dc2626 100%);border:2px solid var(--border);position:relative;"><div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(stRange.bmi)-15)/25)*100))}%;width:10px;height:18px;background:var(--border);border-radius:3px;transform:translateX(-50%);"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px;"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div></div>`:''}
+    ${stRange?.bf?`<div><div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;">Body Fat % (${currentProfile.sex==='male'?'Male':'Female'})</div><div style="height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6 0%,#16a34a 25%,#84cc16 45%,#f59e0b 70%,#dc2626 100%);border:2px solid var(--border);position:relative;"><div style="position:absolute;top:-4px;left:${Math.min(98,Math.max(2,((parseFloat(stRange.bf)-(currentProfile.sex==='male'?3:10))/(currentProfile.sex==='male'?30:35))*100))}%;width:10px;height:18px;background:var(--border);border-radius:3px;transform:translateX(-50%);"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px;">${currentProfile.sex==='male'?'<span>6%</span><span>14%</span><span>18%</span><span>25%</span><span>33%</span>':'<span>14%</span><span>21%</span><span>25%</span><span>32%</span><span>45%</span>'}</div></div>`:''}
   </div>
 
   <!-- Goal -->
@@ -656,7 +661,17 @@ function renderApp(){
     </div>
     <div class="card-main">
       <div style="font-size:11px;color:var(--goalc);font-weight:700;text-transform:uppercase;margin-bottom:10px;">Body Composition</div>
-      <div class="g2">${[{l:'BMI',v:stRange.bmi??'—',sub:bmiI?.l},{l:'Body Fat',v:stRange.bf?stRange.bf+'%':'—',sub:bfI?.l},{l:'Muscle %',v:stRange.muscle?stRange.muscle+'%':'—',sub:null},{l:'Visceral Fat',v:stRange.visceral??'—',sub:null},{l:'BMR',v:stRange.bmr?stRange.bmr+' kcal':'—',sub:null},{l:'BF Change',v:stRange.bfChg?stRange.bfChg+'%':'—',sub:null}].map(x=>`<div style="background:rgba(0,0,0,.2);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${x.l}</div><div style="font-size:17px;font-weight:800;color:var(--btntxt);">${x.v}</div>${x.sub?`<div style="font-size:11px;color:var(--goalc);">${x.sub}</div>`:''}</div>`).join('')}</div>
+      <div class="g2">${(()=>{
+        const bfStart=stRange.bf!=null&&stRange.bfChg!=null?stRange.bf-stRange.bfChg:null;
+        let bfChgBg='rgba(0,0,0,.2)';
+        if(bfStart!=null&&stRange.bf!=null){
+          const distBefore=Math.abs(bfStart-bfg);
+          const distAfter=Math.abs(stRange.bf-bfg);
+          if(distAfter<distBefore)bfChgBg='#16a34a';
+          else if(distAfter>distBefore)bfChgBg='#dc2626';
+        }
+        return[{l:'BMI',v:stRange.bmi??'—',sub:bmiI?.l,bg:'rgba(0,0,0,.2)'},{l:'Body Fat',v:stRange.bf?stRange.bf+'%':'—',sub:bfI?.l,bg:'rgba(0,0,0,.2)'},{l:'Muscle %',v:stRange.muscle?stRange.muscle+'%':'—',sub:null,bg:'rgba(0,0,0,.2)'},{l:'Visceral Fat',v:stRange.visceral??'—',sub:null,bg:'rgba(0,0,0,.2)'},{l:'BMR',v:stRange.bmr?stRange.bmr+' kcal':'—',sub:null,bg:'rgba(0,0,0,.2)'},{l:'BF Change',v:stRange.bfChg?stRange.bfChg+'%':'—',sub:null,bg:bfChgBg}].map(x=>`<div style="background:${x.bg};border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:700;margin-bottom:2px;">${x.l}</div><div style="font-size:17px;font-weight:800;color:var(--btntxt);">${x.v}</div>${x.sub?`<div style="font-size:11px;color:var(--goalc);">${x.sub}</div>`:''}</div>`).join('');
+      })()}</div>
     </div>`:'<div class="card" style="text-align:center;color:var(--muted);padding:40px 0;">No data for selected range.</div>'}
   </div>
 
@@ -1727,10 +1742,38 @@ window.importCSV=function(inp){
   reader.onload=ev=>{
     try{
       const lines=ev.target.result.trim().split('\n');const results=[];
+      const splitRow=line=>line.replace(/^"|"$/g,'').split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+
+      // Read header row to find real column positions instead of assuming a fixed layout
+      const header=splitRow(lines[0]).map(h=>h.toLowerCase().replace(/"/g,'').trim());
+      const findCol=(...keywords)=>{
+        for(let i=0;i<header.length;i++){
+          if(keywords.some(k=>header[i].includes(k)))return i;
+        }
+        return -1;
+      };
+      let idxTime=findCol('time','date');
+      let idxWeight=findCol('weight');
+      let idxBmi=findCol('bmi');
+      let idxBf=findCol('body fat','fat percentage','fat %','bodyfat');
+      let idxVisceral=findCol('visceral');
+      let idxMuscle=findCol('muscle');
+      let idxBmr=findCol('bmr','basal');
+      // Fall back to the original fixed layout only if the header doesn't look parseable
+      const headerLooksValid=idxTime>=0&&idxWeight>=0;
+      if(!headerLooksValid){
+        idxTime=0;idxWeight=1;idxBmi=2;idxBf=3;idxVisceral=6;idxMuscle=8;idxBmr=12;
+      }
+
       for(let i=1;i<lines.length;i++){
-        const row=lines[i].replace(/^"|"$/g,'').split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);if(row.length<2)continue;
-        const ts=row[0].replace(/"/g,'').trim();const wRaw=row[1].replace(/lb|kg/gi,'').trim();
-        const bmiR=row[2]?.trim(),bfR=row[3]?.replace(/%/g,'').trim(),visR=row[6]?.trim(),musR=row[8]?.replace(/%/g,'').trim(),bmrR=row[12]?.replace(/kcal/gi,'').trim();
+        const row=splitRow(lines[i]);if(row.length<2)continue;
+        const ts=row[idxTime]?.replace(/"/g,'').trim();
+        const wRaw=row[idxWeight]?.replace(/lb|kg/gi,'').trim();
+        const bmiR=row[idxBmi]?.trim();
+        const bfR=row[idxBf]?.replace(/%/g,'').trim();
+        const visR=row[idxVisceral]?.trim();
+        const musR=row[idxMuscle]?.replace(/%/g,'').trim();
+        const bmrR=row[idxBmr]?.replace(/kcal/gi,'').trim();
         const dt=new Date(ts);if(isNaN(dt))continue;
         const date=dt.toISOString().split('T')[0];const weight=parseFloat(wRaw);if(isNaN(weight))continue;
         results.push({date,weight:Math.round(weight*10)/10,time:dt.getHours()<12?'morning':'night',bodyFat:bfR&&bfR!=='--'?parseFloat(bfR):null,bmi:bmiR&&bmiR!=='--'?parseFloat(bmiR):null,visceralFat:visR&&visR!=='--'?parseFloat(visR):null,musclePct:musR&&musR!=='--'?parseFloat(musR):null,bmr:bmrR&&bmrR!=='--'?parseInt(bmrR):null,note:'',photo:null,_t:dt.getTime()});
