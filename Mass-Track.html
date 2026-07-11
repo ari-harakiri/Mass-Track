@@ -1764,18 +1764,29 @@ window.importCSV=function(inp){
       if(!headerLooksValid){
         idxTime=0;idxWeight=1;idxBmi=2;idxBf=3;idxVisceral=6;idxMuscle=8;idxBmr=12;
       }
+      // Some exports only state the unit once in the column header (e.g. "Weight(kg)")
+      // rather than on every row value — check the header text as a fallback signal.
+      const headerSaysKg = idxWeight>=0 && /kg/i.test(header[idxWeight]);
+      const headerSaysLb = idxWeight>=0 && /lb/i.test(header[idxWeight]);
 
       for(let i=1;i<lines.length;i++){
         const row=splitRow(lines[i]);if(row.length<2)continue;
         const ts=row[idxTime]?.replace(/"/g,'').trim();
-        const wRaw=row[idxWeight]?.replace(/lb|kg/gi,'').trim();
+        const wRawFull=row[idxWeight]?.trim()||'';
+        // Prefer a unit found directly on the value; otherwise fall back to the header's unit
+        let isKg;
+        if(/kg/i.test(wRawFull)) isKg=true;
+        else if(/lb/i.test(wRawFull)) isKg=false;
+        else isKg=headerSaysKg&&!headerSaysLb;
+        const wRaw=wRawFull.replace(/lb|kg/gi,'').trim();
         const bmiR=row[idxBmi]?.trim();
         const bfR=row[idxBf]?.replace(/%/g,'').trim();
         const visR=row[idxVisceral]?.trim();
         const musR=row[idxMuscle]?.replace(/%/g,'').trim();
         const bmrR=row[idxBmr]?.replace(/kcal/gi,'').trim();
         const dt=new Date(ts);if(isNaN(dt))continue;
-        const date=dt.toISOString().split('T')[0];const weight=parseFloat(wRaw);if(isNaN(weight))continue;
+        const date=dt.toISOString().split('T')[0];let weight=parseFloat(wRaw);if(isNaN(weight))continue;
+        if(isKg)weight=weight/0.453592; // convert to lbs for internal storage, matching app's storage convention
         results.push({date,weight:Math.round(weight*10)/10,time:dt.getHours()<12?'morning':'night',bodyFat:bfR&&bfR!=='--'?parseFloat(bfR):null,bmi:bmiR&&bmiR!=='--'?parseFloat(bmiR):null,visceralFat:visR&&visR!=='--'?parseFloat(visR):null,musclePct:musR&&musR!=='--'?parseFloat(musR):null,bmr:bmrR&&bmrR!=='--'?parseInt(bmrR):null,note:'',photo:null,_t:dt.getTime()});
       }
       const byDate={};results.forEach(r=>{if(!byDate[r.date]||r._t<byDate[r.date]._t)byDate[r.date]=r;});
