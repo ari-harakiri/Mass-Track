@@ -1828,7 +1828,8 @@ window.openSyncPanel = async function(){
   }
   // Load Firebase now (only when user taps Sync)
   if(!window._fbReady){
-    const cfg=JSON.parse('{"apiKey":"AIzaSyDOzcUBs6NKXcU5bfBDGsbFrrHhW3i4fbs","authDomain":"mass-track.firebaseapp.com","projectId":"mass-track","storageBucket":"mass-track.firebasestorage.app","messagingSenderId":"736602201809","appId":"1:736602201809:web:9df0e0aee2af32b67d6ff0","measurementId":"G-36KN4R2EKE"}');
+    // Shares DesktopDiary's Firebase project so signing in once works across both apps.
+    const cfg=JSON.parse('{"apiKey":"AIzaSyD2zxq7c33ff6CnLlNrVolPGtaqHRJhaa0","authDomain":"instantdiary-14474.firebaseapp.com","projectId":"instantdiary-14474","storageBucket":"instantdiary-14474.firebasestorage.app","messagingSenderId":"20644051614","appId":"1:20644051614:web:50d2be0d77cbec02a7998f"}');
     sl('mt_fb_config',cfg);
     renderSyncModal('<div style="background:var(--card);border:3px solid var(--border);border-radius:16px;padding:40px;text-align:center;color:var(--muted);">Connecting…</div>');
     try{
@@ -2013,7 +2014,7 @@ window.syncToCloud = async function(){
     const uid=window._fbUser.uid;
     const db=window._fbDb;
     // Save profiles
-    await db.collection('users').doc(uid).set({profiles,updatedAt:Date.now()});
+    await db.collection('users').doc(uid).collection('masstrack').doc('profiles').set({profiles,updatedAt:Date.now()});
     // Save each profile's data
     for(const p of profiles){
       const data={
@@ -2025,7 +2026,7 @@ window.syncToCloud = async function(){
         goal:gl('mt_'+p.id+'_goal',150),
         bfgoal:gl('mt_'+p.id+'_bfgoal',25),
       };
-      await db.collection('users').doc(uid).collection('data').doc(p.id).set(data);
+      await db.collection('users').doc(uid).collection('masstrack').doc('data_'+p.id).set(data);
     }
     if(statusEl)statusEl.textContent='✓ Uploaded successfully at '+new Date().toLocaleTimeString();
   }catch(e){if(statusEl)statusEl.textContent='Error: '+e.message;}
@@ -2037,13 +2038,13 @@ window.syncFromCloud = async function(){
   if(statusEl)statusEl.textContent='Downloading…';
   try{
     const uid=window._fbUser.uid;const db=window._fbDb;
-    const userDoc=await db.collection('users').doc(uid).get();
+    const userDoc=await db.collection('users').doc(uid).collection('masstrack').doc('profiles').get();
     if(!userDoc.exists){if(statusEl)statusEl.textContent='No cloud data found.';return;}
     const cloudData=userDoc.data();
     if(cloudData.profiles){profiles=cloudData.profiles;sl('mt_profiles',profiles);}
     // Download each profile's data
     for(const p of profiles){
-      const snap=await db.collection('users').doc(uid).collection('data').doc(p.id).get();
+      const snap=await db.collection('users').doc(uid).collection('masstrack').doc('data_'+p.id).get();
       if(!snap.exists)continue;
       const d=snap.data();
       if(d.entries)sl('mt_'+p.id+'_entries',d.entries);
