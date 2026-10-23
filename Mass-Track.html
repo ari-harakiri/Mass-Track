@@ -208,6 +208,11 @@ const pendingEdits={};
 // ═══════════════════════════════
 function pk(k){return 'mt_'+currentProfile.id+'_'+k;}
 function getEntries(){return gl(pk('entries'),[]);}
+const TAILOR_MEASURE_FIELDS=[['neck circumference','Neck Circumference'],['shoulder width','Shoulder Width'],['sleeve length','Sleeve Length'],['back','Back'],['bust','Bust'],['natural waist','Natural Waist'],['hips','Hip'],['inseam','Inseam'],['outseam','Outseam']];
+const OTHER_MEASURE_FIELDS=[['chest','Chest'],['waist','Waist'],['arms','Arms'],['calves','Calves'],['thighs','Thighs']];
+const MEASURE_FIELDS=[...TAILOR_MEASURE_FIELDS,...OTHER_MEASURE_FIELDS];
+function measurementLabel(key){return MEASURE_FIELDS.find(f=>f[0]===key)?.[1]||key;}
+function measurementEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function getMeas(){
   let m=gl(pk('meas'),[]);
   let changed=false;
@@ -750,14 +755,18 @@ function renderLogTab(){
     ${logSubTab==='measures'?`
       <div class="card">
         <div class="sec">Import Measurements</div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Use the Import CSV button above. It detects weight and body measurement columns automatically, including files containing both. For measurements, include Date (YYYY-MM-DD) and measurement columns such as Chest, Waist, Hips, Arms, Calves, Thighs, or Neck. Blank cells are ignored. Optional Units: cm or in; otherwise values use your profile units. Column headers can also specify units, e.g. Waist (cm). Existing records are kept.</p>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Use Import CSV above for weight data, body measurements, or both. Tailor Mode exports (measurement area name, measurement (in), measurement (cm)) are supported directly. Their date comes from the filename, or you will be asked to enter it. Other CSVs can use Date and one column per measurement. Blank cells are ignored; existing records are kept.</p>
         <button class="btn btn-sm btn-neu" style="margin-top:10px;" onclick="downloadMeasurementTemplate()">Download sample CSV</button>
       </div>
       <div class="card">
         <div class="sec">Log Measurements (${hUnit()})</div>
         <input type="date" id="mDate" class="inp" value="${today()}" style="margin-bottom:8px;">
         <div class="g2" style="margin-bottom:8px;">
-          ${['Chest','Waist','Hips','Arms','Calves','Thighs'].map(f=>`<input type="number" id="m${f}" class="inp" placeholder="${f}">`).join('')}
+          ${TAILOR_MEASURE_FIELDS.map(([key,label])=>`<label style="font-size:11px;color:var(--muted);font-weight:700;">${label} (${hUnit()})<input type="number" min="0" step="any" id="m_${key}" class="inp" placeholder="${hUnit()}" style="margin-top:4px;"></label>`).join('')}
+        </div>
+        <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:6px;">Other Measurements</div>
+        <div class="g2" style="margin-bottom:8px;">
+          ${OTHER_MEASURE_FIELDS.map(([key,label])=>`<label style="font-size:11px;color:var(--muted);font-weight:700;">${label} (${hUnit()})<input type="number" min="0" step="any" id="m_${key}" class="inp" placeholder="${hUnit()}" style="margin-top:4px;"></label>`).join('')}
         </div>
         <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:6px;">Custom Measurements</div>
         <div id="customMeasFields">
@@ -776,8 +785,8 @@ function renderLogTab(){
             <div class="card">
               <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}</div>
               <div class="g3">
-                ${['chest','waist','hips','arms','calves','thighs'].filter(f=>m[f]!=null).map(f=>`<div class="chip"><div class="chip-l">${f}</div><div class="chip-v">${m[f]}${hUnit()}</div></div>`).join('')}
-                ${Object.keys(m).filter(k=>!['date','id','chest','waist','hips','arms','calves','thighs'].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${k}</div><div class="chip-v">${m[k]}${hUnit()}</div></div>`).join('')}
+                ${MEASURE_FIELDS.filter(([key])=>m[key]!=null).map(([key,label])=>`<div class="chip"><div class="chip-l">${label}</div><div class="chip-v">${m[key]}${hUnit()}</div></div>`).join('')}
+                ${Object.keys(m).filter(k=>!['date','id',...MEASURE_FIELDS.map(f=>f[0])].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${measurementEscape(measurementLabel(k))}</div><div class="chip-v">${m[k]}${hUnit()}</div></div>`).join('')}
               </div>
               <button class="del" style="margin-top:10px;font-size:12px;padding:4px 10px;" onclick="delMeas(${m.id||0})">Delete</button>
             </div>`).join('');
@@ -1578,10 +1587,10 @@ window.addEntry=function(){
 window.delEntry=function(date){sl(pk('entries'),getEntries().filter(x=>x.date!==date));render();};
 window.addMeas=function(){
   const date=document.getElementById('mDate').value;
-  const fields=['Chest','Waist','Hips','Arms','Calves','Thighs'];
+  const fields=MEASURE_FIELDS.map(f=>f[0]);
   const entry={date,id:Date.now()};
   let hasValue=false;
-  fields.forEach(f=>{const v=document.getElementById('m'+f)?.value;if(v&&v!==''){entry[f.toLowerCase()]=parseFloat(v);hasValue=true;}});
+  fields.forEach(f=>{const v=document.getElementById('m_'+f)?.value;if(v&&v!==''){entry[f.toLowerCase()]=parseFloat(v);hasValue=true;}});
   // Custom fields
   let i=0;
   while(document.getElementById('cmName'+i)){
@@ -1590,6 +1599,8 @@ window.addMeas=function(){
     if(name&&val!==''){entry[name.toLowerCase()]=parseFloat(val);hasValue=true;}
     i++;
   }
+  if(!date){alert('Please select a measurement date.');return;}
+  if(Object.keys(entry).some(k=>k!=='date'&&k!=='id'&&(!Number.isFinite(entry[k])||entry[k]<=0))){alert('Measurements must be positive numbers.');return;}
   if(!hasValue){alert('Please enter at least one measurement.');return;}
   sl(pk('meas'),[...getMeas(),entry]);render();
 };
@@ -1769,7 +1780,8 @@ function parseMeasurementCSV(text, metric){
   const columns=headers.map((h,i)=>{
     if(i===dateCol||i===unitsCol)return null;
     const unit=h.match(/\s*\((cm|in|inches)\)\s*$/);
-    const key=h.replace(/\s*\((cm|in|inches)\)\s*$/,'').trim();
+    const name=h.replace(/\s*\((cm|in|inches)\)\s*$/,'').trim();
+    const key=classifyCSVHeader(name).key||name;
     if(!/^[a-z][a-z0-9 _-]{0,39}$/.test(key)||['id','date','units','__proto__','constructor','prototype'].includes(key))throw new Error('Use simple measurement names, such as Chest, Waist, or Neck (cm).');
     return {key,unit:unit?unit[1]:null};
   });
@@ -1798,7 +1810,7 @@ function parseMeasurementCSV(text, metric){
   return {entries,skipped};
 }
 window.downloadMeasurementTemplate=function(){
-  const csv='Date,Units,Chest,Waist,Hips,Arms,Calves,Thighs,Neck\r\n2026-10-23,cm,100,80,95,32,37,55,36\r\n';
+  const csv='Date,Units,Neck Circumference,Shoulder Width,Sleeve Length,Back,Bust,Natural Waist,Hip,Inseam,Outseam\r\n2026-05-13,cm,35.28,39.83,48.01,42.25,90,75,95,75,100\r\n';
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download='mass-track-measurements-template.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
@@ -1811,7 +1823,7 @@ function classifyCSVHeader(header){
   const metrics={weight:'weight','body weight':'weight',bmi:'bmi',bmr:'bmr','basal metabolic rate':'bmr','body fat':'bodyFat','body fat %':'bodyFat','bodyfat':'bodyFat','fat percentage':'bodyFat','fat %':'bodyFat','muscle':'musclePct','muscle %':'musclePct','muscle percentage':'musclePct','musclepct':'musclePct','visceral fat':'visceralFat',visceralfat:'visceralFat'};
   if(metrics[base])return {type:'weight',key:metrics[base]};
   if(['note','notes','photo','id'].includes(base))return {type:'ignore'};
-  const aliases={chest:'chest',waist:'waist',hip:'hips',hips:'hips',arm:'arms',arms:'arms',calf:'calves',calves:'calves',thigh:'thighs',thighs:'thighs',neck:'neck'};
+  const aliases={chest:'chest',waist:'waist',hip:'hips',hips:'hips',arm:'arms',arms:'arms',calf:'calves',calves:'calves',thigh:'thighs',thighs:'thighs',neck:'neck circumference','neck circumference':'neck circumference','shoulder width':'shoulder width','sleeve length':'sleeve length',back:'back',bust:'bust','natural waist':'natural waist',inseam:'inseam',outseam:'outseam'};
   if(aliases[base]||/\((cm|in|inches)\)\s*$/.test(h))return {type:'measure',key:aliases[base]||base};
   return {type:'unknown'};
 }
@@ -1821,7 +1833,28 @@ window.importCSV=async function(inp){
   try{
     const rows=readMeasurementCSVRows(await file.text());
     if(currentProfile?.id!==profileId)throw new Error('Profile changed. Select the file again.');
-    const headers=rows.shift(),cols=headers.map(classifyCSVHeader);
+    let headers=rows.shift();
+    const normalizedHeaders=headers.map(h=>h.trim().toLowerCase());
+    const areaCol=normalizedHeaders.indexOf('measurement area name');
+    if(areaCol>=0){
+      const preferred=metric?'cm':'in',alternative=metric?'in':'cm';
+      let valueCol=normalizedHeaders.indexOf('measurement ('+preferred+')');
+      let unit=preferred;
+      if(valueCol<0){valueCol=normalizedHeaders.indexOf('measurement ('+alternative+')');unit=alternative;}
+      if(valueCol<0)throw new Error('Tailor Mode CSV must include measurement (in) or measurement (cm).');
+      const filenameDate=file.name?.match(/(?:^|[^0-9])(\d{4}-\d{2}-\d{2})(?=[^0-9]|$)/)?.[1];
+      const importDate=filenameDate||prompt('This CSV has no date. Enter the measurement date (YYYY-MM-DD):',today());
+      if(importDate===null)return;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(importDate)||!Number.isFinite(Date.parse(importDate+'T00:00:00Z'))||new Date(importDate+'T00:00:00Z').toISOString().slice(0,10)!==importDate)throw new Error('Enter a valid measurement date as YYYY-MM-DD.');
+      const flatHeaders=['Date'],flatValues=[importDate];
+      for(const row of rows){
+        if(row.length!==headers.length)throw new Error('A Tailor Mode row has an unexpected number of columns.');
+        const name=row[areaCol].trim();if(!name)continue;
+        flatHeaders.push(name+' ('+unit+')');flatValues.push(row[valueCol]);
+      }
+      headers=flatHeaders;rows.splice(0,rows.length,flatValues);
+    }
+    const cols=headers.map(classifyCSVHeader);
     let dateCol=cols.findIndex(c=>c.type==='date');
     if(dateCol<0)dateCol=cols.findIndex(c=>c.type==='time');
     if(dateCol<0)throw new Error('Include a Date or Timestamp column. Use YYYY-MM-DD for dates.');
@@ -1872,9 +1905,10 @@ window.importCSV=async function(inp){
     const seen=new Set(oldMeasures.map(signature));
     const added=measurementRecords.filter(e=>{const sig=signature(e);if(seen.has(sig)){duplicates++;return false;}seen.add(sig);return true;});
     const summary=weightAdded+' weight records and '+added.length+' measurement records';
+    const dateSummary=added.length?' Measurement dates: '+[...new Set(added.map(e=>e.date))].sort().join(', ')+'.':'';
     const skipped=(invalidWeights+invalidMeasures)+' invalid or empty records and '+duplicates+' duplicates skipped.';
     if(!weightAdded&&!added.length){alert('No new data to import. '+skipped);return;}
-    if(!confirm('Detected '+summary+'. Import into '+currentProfile.name+'?\n'+skipped+' Existing records will be kept.'))return;
+    if(!confirm('Detected '+summary+'. Import into '+currentProfile.name+'?'+dateSummary+'\n'+skipped+' Existing records will be kept.'))return;
     const weightKey=pk('entries'),measKey=pk('meas');
     const beforeWeights=localStorage.getItem(weightKey),beforeMeasures=localStorage.getItem(measKey);
     added.forEach((e,i)=>e.id=Date.now()+i+Math.random());
