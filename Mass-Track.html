@@ -228,7 +228,7 @@ function measurementDateNavigation(records){
   if(!periods.includes(state.period))state.period=periods.includes('PM')?'PM':periods[0];
   const index=dates.indexOf(state.date);
   const options=dates.map(date=>'<option value="'+date+'" '+(date===state.date?'selected':'')+'>'+new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})+'</option>').join('');
-  const periodButtons=periods.length>1?'<div class="mtabs" style="margin:10px 0 0;">'+periods.map(period=>'<button class="mtab '+(period===state.period?'on':'')+'" onclick="selectMeasurementPeriod(\''+period+'\')" aria-pressed="'+(period===state.period)+'">'+(period||'Unspecified')+'</button>').join('')+'</div>':'';
+  const periodButtons=periods.length>1?'<div class="ttime" style="margin-top:10px;" role="group" aria-label="Measurement AM or PM">'+periods.map(period=>'<button class="'+(period===state.period?(period==='AM'?'am':period==='PM'?'pm':''):'')+'" onclick="selectMeasurementPeriod(\''+period+'\')" aria-label="'+(period||'Unspecified')+'" aria-pressed="'+(period===state.period)+'">'+(period==='AM'?'☀️':period==='PM'?'🌙':'Unspecified')+'</button>').join('')+'</div>':'';
   return '<div class="card"><div class="sec">Saved Measurements</div><div class="row" style="margin-bottom:0;"><button class="page-btn" aria-label="Previous saved date" onclick="stepMeasurementDate(1)" '+(index===dates.length-1?'disabled style="opacity:.35;"':'')+'>‹</button><select class="inp" aria-label="Saved measurement date" onchange="selectMeasurementDate(this.value)">'+options+'</select><button class="page-btn" aria-label="Next saved date" onclick="stepMeasurementDate(-1)" '+(index===0?'disabled style="opacity:.35;"':'')+'>›</button></div>'+periodButtons+'</div>';
 }
 window.selectMeasurementDate=function(date){
@@ -825,10 +825,11 @@ function renderLogTab(){
         <div class="sec">${measurementSection==='tailoring'?'Tailoring':'Body Measurements'}</div>
         <div class="row">
           <input type="date" id="mDate" class="inp" value="${today()}" aria-label="Measurement date">
-          <select id="mPeriod" class="inp" aria-label="Measurement AM or PM">
-            <option value="AM" ${new Date().getHours()<12?'selected':''}>AM</option>
-            <option value="PM" ${new Date().getHours()>=12?'selected':''}>PM</option>
-          </select>
+          <input type="hidden" id="mPeriod" value="${new Date().getHours()<12?'AM':'PM'}">
+          <div class="ttime" role="group" aria-label="Measurement AM or PM">
+            <button id="mAM" class="${new Date().getHours()<12?'am':''}" onclick="setMeasurementPeriod('AM')" aria-label="AM" aria-pressed="${new Date().getHours()<12}">☀️</button>
+            <button id="mPM" class="${new Date().getHours()>=12?'pm':''}" onclick="setMeasurementPeriod('PM')" aria-label="PM" aria-pressed="${new Date().getHours()>=12}">🌙</button>
+          </div>
         </div>
         <div class="g2" style="margin-bottom:8px;">
           ${measureFields().map(([key,label])=>`<label style="font-size:11px;color:var(--muted);font-weight:700;">${label}${measurementUnit(key)?' ('+measurementUnit(key)+')':''}<input type="number" min="0" step="any" id="m_${key}" class="inp" placeholder="${measurementUnit(key)}" style="margin-top:4px;"></label>`).join('')}
@@ -1629,6 +1630,14 @@ window.addEntry=function(){
   sl(pk('entries'),entries);logPage=0;render();
 };
 window.delEntry=function(date){sl(pk('entries'),getEntries().filter(x=>x.date!==date));render();};
+window.setMeasurementPeriod=function(period){
+  document.getElementById('mPeriod').value=period;
+  for(const p of ['AM','PM']){
+    const button=document.getElementById('m'+p);
+    button.className=period===p?p.toLowerCase():'';
+    button.setAttribute('aria-pressed',String(period===p));
+  }
+};
 window.addMeas=function(){
   const date=document.getElementById('mDate').value;
   const fields=measureFields().map(f=>f[0]);
