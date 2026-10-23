@@ -45,8 +45,8 @@ canvas{display:block;width:100%!important;}
 .ld{width:10px;height:10px;border-radius:2px;}
 .ttime{display:flex;border:2px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:2px 2px 0 var(--shadow);flex-shrink:0;}
 .ttime button{flex:1;padding:9px 14px;border:none;cursor:pointer;font-size:18px;background:var(--inp);color:var(--inptxt);font-family:inherit;}
-.ttime button.am{background:#fbbf24;color:#111;}
-.ttime button.pm{background:#1e3a8a;color:#fff;}
+.ttime button.am{background:var(--am);color:var(--amtxt);}
+.ttime button.pm{background:var(--pm);color:var(--pmtxt);}
 .mtabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
 .mtab{padding:6px 10px;border-radius:8px;border:2px solid transparent;cursor:pointer;font-weight:700;font-size:10px;background:var(--neu);color:var(--neutxt);font-family:inherit;}
 .mtab.on{background:var(--main);color:var(--btntxt);border-color:var(--border);}
@@ -365,9 +365,31 @@ function calcStreak(){
 // ═══════════════════════════════
 // APPLY PALETTE
 // ═══════════════════════════════
+function paletteContrast(a,b){
+  const luminance=color=>{
+    let hex=color.replace('#','');
+    if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
+    if(!/^[0-9a-f]{6}$/i.test(hex))return null;
+    const channels=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4));
+    return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;
+  };
+  const x=luminance(a),y=luminance(b);
+  return x===null||y===null?0:(Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);
+}
+function paletteReadable(background,preferred){
+  for(const color of preferred)if(color&&paletteContrast(color,background)>=4.5)return color;
+  return paletteContrast('#fff',background)>paletteContrast('#111',background)?'#fff':'#111';
+}
+function paletteDetails(q){
+  const am=q.am||q.main,pm=q.pm||q.accent;
+  return {am,amtxt:paletteReadable(am,[q.amtxt,q.btntxt,q.text]),pm,pmtxt:paletteReadable(pm,[q.pmtxt,q.acctxt,q.text]),bf:paletteReadable(q.card,[q.bf,q.accent,q.main,q.text])};
+}
 function applyPalette(palKey){
   const q=getPal(palKey);const r=document.documentElement;
   const vars={'--bg':q.bg,'--text':q.text,'--muted':q.muted,'--faint':q.faint,'--main':q.main,'--btntxt':q.btntxt,'--accent':q.accent,'--acctxt':q.acctxt,'--acc2':q.acc2,'--green':q.green,'--grntxt':q.grntxt,'--neu':q.neu,'--neutxt':q.neutxt,'--goalc':q.goalc,'--card':q.card,'--inp':q.inp,'--inptxt':q.inptxt,'--border':q.border,'--shadow':q.shadow,'--tab':q.tab,'--tabtxt':q.tabtxt};
+  const details=paletteDetails(q);
+  for(const [key,value]of Object.entries(details))vars['--'+key]=value;
+  CC.bodyFat=details.bf;
   for(const[k,v]of Object.entries(vars))r.style.setProperty(k,v);
   if(q.bgImage){
     document.body.style.background=q.bodyBg||q.bg;
@@ -761,7 +783,7 @@ function renderLogEntries(entries){
   const pageEntries=s.slice(page*100,(page+1)*100);
   return`
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;">${s.length} entries total${totalPages>1?' — Page '+(page+1)+' of '+totalPages:''}</div>
-    ${pageEntries.map(x=>`<div class="entry"><div><div style="font-size:12px;color:var(--muted);">${x.date} ${x.time==='morning'?'☀️':'🌙'}</div><div style="font-size:18px;font-weight:800;color:var(--text);">${wLabel(x.weight)}${x.bodyFat!=null?`<span style="font-size:13px;color:#7c3aed;margin-left:8px;">${x.bodyFat}% BF</span>`:''}</div>${x.note?`<div style="font-size:12px;color:var(--muted);font-style:italic;">"${x.note}"</div>`:''}</div><button class="del" onclick="delEntry('${x.date}')">✕</button></div>`).join('')}
+    ${pageEntries.map(x=>`<div class="entry"><div><div style="font-size:12px;color:var(--muted);">${x.date} ${x.time==='morning'?'☀️':'🌙'}</div><div style="font-size:18px;font-weight:800;color:var(--text);">${wLabel(x.weight)}${x.bodyFat!=null?`<span style="font-size:13px;color:var(--bf);margin-left:8px;">${x.bodyFat}% BF</span>`:''}</div>${x.note?`<div style="font-size:12px;color:var(--muted);font-style:italic;">"${x.note}"</div>`:''}</div><button class="del" onclick="delEntry('${x.date}')">✕</button></div>`).join('')}
     ${totalPages>1?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;justify-content:center;">
       ${page>0?`<button class="page-btn" onclick="logPage=${page-1};render();">← Prev</button>`:''}
       ${Array.from({length:totalPages},(_,i)=>`<button class="page-btn ${i===page?'on':''}" onclick="logPage=${i};render();">${i+1}</button>`).join('')}
@@ -1381,10 +1403,10 @@ function renderRing(s,g,bfg,st){
     </svg><div style="font-size:12px;font-weight:700;color:var(--muted);">Weight Goal</div></div>
     ${bfPct!==null?`<div style="text-align:center;"><svg width="240" height="200">
       <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#e5e7eb" stroke-width="${sw}"/>
-      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${bfPct>=100?CGOOD:'#7c3aed'}" stroke-width="${sw}" stroke-dasharray="${(bfPct/100)*circ} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${bfPct>=100?CGOOD:CC.bodyFat}" stroke-width="${sw}" stroke-dasharray="${(bfPct/100)*circ} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
       <text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="26" font-weight="900" fill="${q.text}">${Math.round(bfPct)}%</text>
       <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="12" fill="${q.muted}">to BF goal</text>
-      <text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="11" fill="#7c3aed" font-weight="700">Now: ${st.bf}%</text>
+      <text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="11" fill="${CC.bodyFat}" font-weight="700">Now: ${st.bf}%</text>
     </svg><div style="font-size:12px;font-weight:700;color:var(--muted);">Body Fat Goal</div></div>`:''}
   </div></div>`;
 }
