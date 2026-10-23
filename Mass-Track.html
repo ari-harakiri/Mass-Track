@@ -210,7 +210,7 @@ function pk(k){return 'mt_'+currentProfile.id+'_'+k;}
 function getEntries(){return gl(pk('entries'),[]);}
 const TAILOR_MEASURE_FIELDS=[['neck circumference','Neck Circumference'],['shoulder width','Shoulder Width'],['sleeve length','Sleeve Length'],['back','Back'],['bust','Bust'],['natural waist','Natural Waist'],['hips','Hip'],['inseam','Inseam'],['outseam','Outseam']];
 const OTHER_MEASURE_FIELDS=[['chest','Chest'],['waist','Waist'],['arms','Arms'],['calves','Calves'],['thighs','Thighs']];
-const MEASURE_FIELDS=[...TAILOR_MEASURE_FIELDS,...OTHER_MEASURE_FIELDS];
+const MEASURE_FIELDS=TAILOR_MEASURE_FIELDS;
 function measurementLabel(key){return MEASURE_FIELDS.find(f=>f[0]===key)?.[1]||key;}
 function measurementEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function getMeas(){
@@ -759,18 +759,6 @@ function renderLogTab(){
         <div class="g2" style="margin-bottom:8px;">
           ${TAILOR_MEASURE_FIELDS.map(([key,label])=>`<label style="font-size:11px;color:var(--muted);font-weight:700;">${label} (${hUnit()})<input type="number" min="0" step="any" id="m_${key}" class="inp" placeholder="${hUnit()}" style="margin-top:4px;"></label>`).join('')}
         </div>
-        <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:6px;">Other Measurements</div>
-        <div class="g2" style="margin-bottom:8px;">
-          ${OTHER_MEASURE_FIELDS.map(([key,label])=>`<label style="font-size:11px;color:var(--muted);font-weight:700;">${label} (${hUnit()})<input type="number" min="0" step="any" id="m_${key}" class="inp" placeholder="${hUnit()}" style="margin-top:4px;"></label>`).join('')}
-        </div>
-        <div style="font-size:11px;color:var(--faint);font-weight:700;margin-bottom:6px;">Custom Measurements</div>
-        <div id="customMeasFields">
-          <div class="row" style="margin-bottom:6px;">
-            <input type="text" id="cmName0" class="inp" placeholder="Name (e.g. Neck)" style="flex:1;">
-            <input type="number" id="cmVal0" class="inp" placeholder="${hUnit()}" style="flex:1;">
-          </div>
-        </div>
-        <button onclick="addCustomMeasField()" class="btn btn-sm btn-neu" style="border:2px solid var(--border);margin-bottom:10px;">+ Add another</button>
         <button class="btn" onclick="addMeas()">Save measurements</button>
       </div>
       ${(()=>{
@@ -1586,14 +1574,6 @@ window.addMeas=function(){
   const entry={date,id:Date.now()};
   let hasValue=false;
   fields.forEach(f=>{const v=document.getElementById('m_'+f)?.value;if(v&&v!==''){entry[f.toLowerCase()]=parseFloat(v);hasValue=true;}});
-  // Custom fields
-  let i=0;
-  while(document.getElementById('cmName'+i)){
-    const name=document.getElementById('cmName'+i).value.trim();
-    const val=document.getElementById('cmVal'+i).value;
-    if(name&&val!==''){entry[name.toLowerCase()]=parseFloat(val);hasValue=true;}
-    i++;
-  }
   if(!date){alert('Please select a measurement date.');return;}
   if(Object.keys(entry).some(k=>k!=='date'&&k!=='id'&&(!Number.isFinite(entry[k])||entry[k]<=0))){alert('Measurements must be positive numbers.');return;}
   if(!hasValue){alert('Please enter at least one measurement.');return;}
