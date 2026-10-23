@@ -217,10 +217,22 @@ function measurementUnit(key){return key==='weight'?wUnit():key==='bodyFat'?'%':
 function measurementValue(m,key){const value=key==='weight'?toDisplay(m[key]):m[key];return Number(value).toFixed(1);}
 function measurementLabel(key){return [...BODY_MEASURE_FIELDS,...TAILOR_MEASURE_FIELDS].find(f=>f[0]===key)?.[1]||key;}
 function measurementEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function measurementPeriod(value){
+  const text=String(value||'').trim();
+  if(/^(am|morning)$/i.test(text))return 'AM';
+  if(/^(pm|night|evening)$/i.test(text))return 'PM';
+  const hour=text.match(/(?:[T ]|^)(\d{1,2}):\d{2}/);
+  return hour&&Number(hour[1])<24?(Number(hour[1])<12?'AM':'PM'):'';
+}
 function getMeas(){
   let m=gl(pk('meas'),[]);
   let changed=false;
-  m=m.map(x=>{if(!x.id){changed=true;return{...x,id:Date.now()+Math.random()};}return x;});
+  m=m.map(x=>{
+    let entry=x;
+    if(x.scanAt){const {scanAt,...rest}=x;entry={...rest,period:x.period||measurementPeriod(scanAt)};changed=true;}
+    if(!entry.id){entry={...entry,id:Date.now()+Math.random()};changed=true;}
+    return entry;
+  });
   if(changed)sl(pk('meas'),m);
   return m;
 }
@@ -762,7 +774,13 @@ function renderLogTab(){
       </div>
       <div class="card">
         <div class="sec">${measurementSection==='tailoring'?'Tailoring':'Body Measurements'}</div>
-        <input type="date" id="mDate" class="inp" value="${today()}" style="margin-bottom:8px;">
+        <div class="row">
+          <input type="date" id="mDate" class="inp" value="${today()}" aria-label="Measurement date">
+          <select id="mPeriod" class="inp" aria-label="Measurement AM or PM">
+            <option value="AM" ${new Date().getHours()<12?'selected':''}>AM</option>
+            <option value="PM" ${new Date().getHours()>=12?'selected':''}>PM</option>
+          </select>
+        </div>
         <div class="g2" style="margin-bottom:8px;">
           ${measureFields().map(([key,label])=>`<label style="font-size:11px;color:var(--muted);font-weight:700;">${label}${measurementUnit(key)?' ('+measurementUnit(key)+')':''}<input type="number" min="0" step="any" id="m_${key}" class="inp" placeholder="${measurementUnit(key)}" style="margin-top:4px;"></label>`).join('')}
         </div>
@@ -773,7 +791,7 @@ function renderLogTab(){
           if(!ms.length)return '<div class="card" style="text-align:center;color:var(--muted);padding:40px 0;">No measurements for this range.</div>';
           return ms.map(m=>`
             <div class="card">
-              <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}${m.scanAt?' · '+measurementEscape(m.scanAt.slice(11,19))+' UTC':''}</div>
+              <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}${m.period?' · '+measurementEscape(m.period):''}</div>
               <div class="g2" style="margin-bottom:0;">
                 ${measureFields().filter(([key])=>m[key]!=null).map(([key,label])=>`<div class="chip" style="${measurementSection==='body'&&/ left$/.test(key)?'grid-column:1;':measurementSection==='body'&&/ right$/.test(key)?'grid-column:2;':''}"><div class="chip-l">${label}</div><div class="chip-v">${measurementValue(m,key)}${measurementUnit(key)}</div></div>`).join('')}
                 ${Object.keys(m).filter(k=>!['date','id',...measureFields().map(f=>f[0])].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${measurementEscape(measurementLabel(k))}</div><div class="chip-v">${Number(m[k]).toFixed(1)}${hUnit()}</div></div>`).join('')}
@@ -1578,11 +1596,11 @@ window.delEntry=function(date){sl(pk('entries'),getEntries().filter(x=>x.date!==
 window.addMeas=function(){
   const date=document.getElementById('mDate').value;
   const fields=measureFields().map(f=>f[0]);
-  const entry={date,id:Date.now(),kind:measurementSection};
+  const entry={date,id:Date.now(),kind:measurementSection,period:document.getElementById('mPeriod').value};
   let hasValue=false;
   fields.forEach(f=>{const v=document.getElementById('m_'+f)?.value;if(v&&v!==''){entry[f]=f==='weight'?toStore(parseFloat(v)):parseFloat(v);hasValue=true;}});
   if(!date){alert('Please select a measurement date.');return;}
-  if(Object.keys(entry).some(k=>k!=='date'&&k!=='id'&&k!=='kind'&&(!Number.isFinite(entry[k])||entry[k]<=0))){alert('Measurements must be positive numbers.');return;}
+  if(Object.keys(entry).some(k=>k!=='date'&&k!=='id'&&k!=='kind'&&k!=='period'&&(!Number.isFinite(entry[k])||entry[k]<=0))){alert('Measurements must be positive numbers.');return;}
   if(!hasValue){alert('Please enter at least one measurement.');return;}
   sl(pk('meas'),[...getMeas(),entry]);render();
 };
@@ -1867,8 +1885,9 @@ window.importCSV=async function(inp){
         const parsed=parseMeasurementCSV(measurementHeaders.map(encode).join(',')+'\n'+values.map(encode).join(','),metric);
         parsed.entries.forEach(e=>{
           e.kind=importKind;
+          const period=measurementPeriod(timeCol>=0?row[timeCol]:rawDate);
+          if(period)e.period=period;
           if(bodyScan){
-            e.scanAt=rawDate;
             for(const [header,key] of [['weight','weight'],['bfp','bodyFat'],['bmi','bmi']]){
               const value=Number(row[normalizedHeaders.indexOf(header)]);
               if(Number.isFinite(value)&&value>0)e[key]=key==='weight'?+(value/0.453592).toFixed(1):value;
