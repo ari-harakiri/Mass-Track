@@ -564,6 +564,7 @@ function renderApp(){
   const toG=stRange?(stRange.cur-g).toFixed(1):null;
 
   return`<div class="wrap">
+  <input type="file" id="measurementCsvFile" accept=".csv,text/csv" style="display:none;" onchange="importMeasurementsCSV(this)">
   <input type="file" id="csvFile" accept=".csv,.txt" style="display:none;" onchange="importCSV(this)">
   <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="uploadEntryPhoto(this)">
 
@@ -748,6 +749,12 @@ function renderLogTab(){
       ${renderLogEntries(rangeE)}`:''}
 
     ${logSubTab==='measures'?`
+      <div class="card">
+        <div class="sec">Import Measurements</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Upload a CSV with Date (YYYY-MM-DD) and measurement columns such as Chest, Waist, Hips, Arms, Calves, Thighs, or Neck. Blank cells are ignored. Optional Units: cm or in; otherwise values use your profile units. Column headers can also specify units, e.g. Waist (cm). Existing records are kept.</p>
+        <button class="btn btn-grn" onclick="document.getElementById('measurementCsvFile').click()">Import measurements CSV</button>
+        <button class="btn btn-sm btn-neu" style="margin-top:10px;" onclick="downloadMeasurementTemplate()">Download sample CSV</button>
+      </div>
       <div class="card">
         <div class="sec">Log Measurements (${hUnit()})</div>
         <input type="date" id="mDate" class="inp" value="${today()}" style="margin-bottom:8px;">
@@ -1736,6 +1743,83 @@ window.exportCSV=function(){
   const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=currentProfile.name.replace(/\s+/g,'-')+'-mass-track-'+today()+'.csv';a.click();URL.revokeObjectURL(url);
 };
+// Measurement CSV uses the same profile units and record shape as manual entry.
+function parseMeasurementCSV(text, metric){
+  const rows=[];let row=[],cell='',quoted=false,closed=false;
+  text=text.replace(/^\uFEFF/,'');
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++;}else{quoted=false;closed=true;}}else cell+=c;}
+    else if(c==='"'&&!cell&&!closed)quoted=true;
+    else if(c===','||c==='\n'||c==='\r'){
+      row.push(cell);cell='';closed=false;
+      if(c!==','){if(row.some(v=>v.trim()))rows.push(row);row=[];if(c==='\r'&&text[i+1]==='\n')i++;}
+    }else if(closed){if(!/\s/.test(c))throw new Error('Unexpected text after a quoted CSV value.');}
+    else{if(c==='"')throw new Error('Invalid quote in CSV.');cell+=c;}
+  }
+  if(quoted)throw new Error('Unclosed quote in CSV.');
+  row.push(cell);if(row.some(v=>v.trim()))rows.push(row);
+  if(rows.length<2)throw new Error('Include a header and at least one measurement row.');
+  const headers=rows.shift().map(v=>v.trim().toLowerCase());
+  const dateCol=headers.indexOf('date');
+  if(dateCol<0)throw new Error('A Date column is required (YYYY-MM-DD).');
+  const unitsCol=headers.indexOf('units');
+  const columns=headers.map((h,i)=>{
+    if(i===dateCol||i===unitsCol)return null;
+    const unit=h.match(/\s*\((cm|in|inches)\)\s*$/);
+    const key=h.replace(/\s*\((cm|in|inches)\)\s*$/,'').trim();
+    if(!/^[a-z][a-z0-9 _-]{0,39}$/.test(key)||['id','date','units','__proto__','constructor','prototype'].includes(key))throw new Error('Use simple measurement names, such as Chest, Waist, or Neck (cm).');
+    return {key,unit:unit?unit[1]:null};
+  });
+  const names=columns.filter(Boolean).map(c=>c.key);
+  if(!names.length||new Set(names).size!==names.length)throw new Error('Include unique measurement columns.');
+  const entries=[];let skipped=0;
+  for(const values of rows){
+    const date=(values[dateCol]||'').trim();
+    if(values.length!==headers.length||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T00:00:00Z'))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date){skipped++;continue;}
+    const rowUnit=unitsCol<0?'':values[unitsCol].trim().toLowerCase();
+    if(rowUnit&&!['cm','in','inches'].includes(rowUnit)){skipped++;continue;}
+    const entry={date};let invalid=false;
+    columns.forEach((col,i)=>{
+      if(!col)return;
+      const raw=values[i].trim();if(!raw||raw==='--')return;
+      const match=raw.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(cm|in|inches)?$/i);
+      if(!match){invalid=true;return;}
+      let value=Number(match[1]);const unit=(match[2]||col.unit||rowUnit||(metric?'cm':'in')).toLowerCase();
+      if(metric&&unit!=='cm')value*=2.54;
+      if(!metric&&unit==='cm')value/=2.54;
+      if(!Number.isFinite(value)||value<=0){invalid=true;return;}
+      entry[col.key]=+value.toFixed(4);
+    });
+    if(invalid||Object.keys(entry).length===1)skipped++;else entries.push(entry);
+  }
+  return {entries,skipped};
+}
+window.downloadMeasurementTemplate=function(){
+  const csv='Date,Units,Chest,Waist,Hips,Arms,Calves,Thighs,Neck\r\n2026-10-23,cm,100,80,95,32,37,55,36\r\n';
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download='mass-track-measurements-template.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+window.importMeasurementsCSV=async function(inp){
+  const file=inp.files[0];inp.value='';if(!file||!currentProfile)return;
+  const profileId=currentProfile.id,key=pk('meas'),metric=isMetric();
+  try{
+    const {entries,skipped}=parseMeasurementCSV(await file.text(),metric);
+    if(currentProfile?.id!==profileId){alert('Profile changed. Select the file again for the intended profile.');return;}
+    const existing=getMeas();
+    const signature=e=>JSON.stringify(Object.keys(e).filter(k=>k!=='id').sort().map(k=>[k,e[k]]));
+    const seen=new Set(existing.map(signature));let duplicates=0;
+    const added=entries.filter(e=>{const s=signature(e);if(seen.has(s)){duplicates++;return false;}seen.add(s);return true;});
+    if(!added.length){alert('No new measurements to import. '+skipped+' invalid or empty rows; '+duplicates+' duplicates.');return;}
+    if(!confirm('Import '+added.length+' measurement records into '+currentProfile.name+' ('+(metric?'cm':'in')+')?\n'+skipped+' invalid or empty rows and '+duplicates+' duplicates will be skipped. Existing measurements will be kept.'))return;
+    const base=Date.now();added.forEach((e,i)=>e.id=base+i+Math.random());
+    // Write directly so quota failures cannot be reported as successful imports.
+    localStorage.setItem(key,JSON.stringify([...existing,...added]));
+    logSubTab='measures';sl('mt_logSubTab',logSubTab);render();
+    alert('Imported '+added.length+' measurement records. '+skipped+' invalid or empty rows and '+duplicates+' duplicates skipped.');
+  }catch(err){alert('Measurement import failed: '+err.message);}
+};
+
 window.importCSV=function(inp){
   const file=inp.files[0];if(!file)return;
   const reader=new FileReader();
