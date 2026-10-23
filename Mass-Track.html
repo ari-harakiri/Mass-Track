@@ -564,7 +564,6 @@ function renderApp(){
   const toG=stRange?(stRange.cur-g).toFixed(1):null;
 
   return`<div class="wrap">
-  <input type="file" id="measurementCsvFile" accept=".csv,text/csv" style="display:none;" onchange="importMeasurementsCSV(this)">
   <input type="file" id="csvFile" accept=".csv,.txt" style="display:none;" onchange="importCSV(this)">
   <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="uploadEntryPhoto(this)">
 
@@ -751,8 +750,7 @@ function renderLogTab(){
     ${logSubTab==='measures'?`
       <div class="card">
         <div class="sec">Import Measurements</div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Upload a CSV with Date (YYYY-MM-DD) and measurement columns such as Chest, Waist, Hips, Arms, Calves, Thighs, or Neck. Blank cells are ignored. Optional Units: cm or in; otherwise values use your profile units. Column headers can also specify units, e.g. Waist (cm). Existing records are kept.</p>
-        <button class="btn btn-grn" onclick="document.getElementById('measurementCsvFile').click()">Import measurements CSV</button>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Use the Import CSV button above. It detects weight and body measurement columns automatically, including files containing both. For measurements, include Date (YYYY-MM-DD) and measurement columns such as Chest, Waist, Hips, Arms, Calves, Thighs, or Neck. Blank cells are ignored. Optional Units: cm or in; otherwise values use your profile units. Column headers can also specify units, e.g. Waist (cm). Existing records are kept.</p>
         <button class="btn btn-sm btn-neu" style="margin-top:10px;" onclick="downloadMeasurementTemplate()">Download sample CSV</button>
       </div>
       <div class="card">
@@ -1744,7 +1742,7 @@ window.exportCSV=function(){
   const a=document.createElement('a');a.href=url;a.download=currentProfile.name.replace(/\s+/g,'-')+'-mass-track-'+today()+'.csv';a.click();URL.revokeObjectURL(url);
 };
 // Measurement CSV uses the same profile units and record shape as manual entry.
-function parseMeasurementCSV(text, metric){
+function readMeasurementCSVRows(text){
   const rows=[];let row=[],cell='',quoted=false,closed=false;
   text=text.replace(/^\uFEFF/,'');
   for(let i=0;i<text.length;i++){
@@ -1760,6 +1758,10 @@ function parseMeasurementCSV(text, metric){
   if(quoted)throw new Error('Unclosed quote in CSV.');
   row.push(cell);if(row.some(v=>v.trim()))rows.push(row);
   if(rows.length<2)throw new Error('Include a header and at least one measurement row.');
+  return rows;
+}
+function parseMeasurementCSV(text, metric){
+  const rows=readMeasurementCSVRows(text);
   const headers=rows.shift().map(v=>v.trim().toLowerCase());
   const dateCol=headers.indexOf('date');
   if(dateCol<0)throw new Error('A Date column is required (YYYY-MM-DD).');
@@ -1800,88 +1802,92 @@ window.downloadMeasurementTemplate=function(){
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download='mass-track-measurements-template.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
-window.importMeasurementsCSV=async function(inp){
+function classifyCSVHeader(header){
+  const h=header.trim().toLowerCase();
+  const base=h.replace(/\s*\([^)]*\)\s*$/,'').replace(/[_-]+/g,' ').trim();
+  if(['date','datetime','date time','timestamp','time stamp'].includes(base))return {type:'date'};
+  if(base==='time')return {type:'time'};
+  if(base==='units'||base==='unit')return {type:'units'};
+  const metrics={weight:'weight','body weight':'weight',bmi:'bmi',bmr:'bmr','basal metabolic rate':'bmr','body fat':'bodyFat','body fat %':'bodyFat','bodyfat':'bodyFat','fat percentage':'bodyFat','fat %':'bodyFat','muscle':'musclePct','muscle %':'musclePct','muscle percentage':'musclePct','musclepct':'musclePct','visceral fat':'visceralFat',visceralfat:'visceralFat'};
+  if(metrics[base])return {type:'weight',key:metrics[base]};
+  if(['note','notes','photo','id'].includes(base))return {type:'ignore'};
+  const aliases={chest:'chest',waist:'waist',hip:'hips',hips:'hips',arm:'arms',arms:'arms',calf:'calves',calves:'calves',thigh:'thighs',thighs:'thighs',neck:'neck'};
+  if(aliases[base]||/\((cm|in|inches)\)\s*$/.test(h))return {type:'measure',key:aliases[base]||base};
+  return {type:'unknown'};
+}
+window.importCSV=async function(inp){
   const file=inp.files[0];inp.value='';if(!file||!currentProfile)return;
-  const profileId=currentProfile.id,key=pk('meas'),metric=isMetric();
+  const profileId=currentProfile.id,metric=isMetric();
   try{
-    const {entries,skipped}=parseMeasurementCSV(await file.text(),metric);
-    if(currentProfile?.id!==profileId){alert('Profile changed. Select the file again for the intended profile.');return;}
-    const existing=getMeas();
+    const rows=readMeasurementCSVRows(await file.text());
+    if(currentProfile?.id!==profileId)throw new Error('Profile changed. Select the file again.');
+    const headers=rows.shift(),cols=headers.map(classifyCSVHeader);
+    let dateCol=cols.findIndex(c=>c.type==='date');
+    if(dateCol<0)dateCol=cols.findIndex(c=>c.type==='time');
+    if(dateCol<0)throw new Error('Include a Date or Timestamp column. Use YYYY-MM-DD for dates.');
+    const weightCol=cols.findIndex(c=>c.key==='weight');
+    // In measurement-only CSVs, other simple column names are custom measurements.
+    if(weightCol<0)cols.forEach((c,i)=>{if(c.type==='unknown')cols[i]={type:'measure',key:headers[i].trim().toLowerCase()};});
+    const measures=cols.map((c,i)=>c.type==='measure'?i:-1).filter(i=>i>=0);
+    if(weightCol<0&&!measures.length)throw new Error('No weight or body measurement columns recognized.');
+    const weightRecords=[],measurementRecords=[];let invalidWeights=0,invalidMeasures=0;
+    const unitsCol=cols.findIndex(c=>c.type==='units');
+    const timeCol=cols.findIndex((c,i)=>c.type==='time'&&i!==dateCol);
+    const encode=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    const measurementHeaders=['Date',...(unitsCol<0?[]:['Units']),...measures.map(i=>headers[i])];
+    for(const row of rows){
+      if(row.length!==headers.length){invalidWeights+=weightCol>=0?1:0;invalidMeasures+=measures.length?1:0;continue;}
+      const rawDate=row[dateCol].trim();
+      const dateMatch=rawDate.match(/^(\d{4}-\d{2}-\d{2})(?:$|[ T])/);
+      const dt=new Date(rawDate);
+      const date=dateMatch?dateMatch[1]:Number.isFinite(dt.getTime())?dt.toISOString().slice(0,10):'';
+      const validDate=/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date+'T00:00:00Z'))&&new Date(date+'T00:00:00Z').toISOString().slice(0,10)===date;
+      if(!validDate){invalidWeights+=weightCol>=0?1:0;invalidMeasures+=measures.length?1:0;continue;}
+      if(measures.length){
+        const values=[date,...(unitsCol<0?[]:[row[unitsCol]]),...measures.map(i=>row[i])];
+        const parsed=parseMeasurementCSV(measurementHeaders.map(encode).join(',')+'\n'+values.map(encode).join(','),metric);
+        measurementRecords.push(...parsed.entries);invalidMeasures+=parsed.skipped;
+      }
+      if(weightCol>=0&&row[weightCol].trim()){
+        const raw=row[weightCol].trim(),match=raw.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(kg|lbs?|pounds)?$/i);
+        if(!match||Number(match[1])<=0){invalidWeights++;continue;}
+        const unit=(match[2]||headers[weightCol].match(/\((kg|lbs?|pounds)\)/i)?.[1]||(metric?'kg':'lb')).toLowerCase();
+        const weight=+(Number(match[1])/(unit==='kg'?0.453592:1)).toFixed(1);
+        const entry={date,weight,time:timeCol>=0&&/^(morning|night)$/.test(row[timeCol].trim())?row[timeCol].trim():Number.isFinite(dt.getTime())&&dt.getHours()>=12?'night':'morning',note:'',photo:null};
+        let bad=false;
+        cols.forEach((c,i)=>{
+          if(c.type!=='weight'||c.key==='weight')return;
+          const v=row[i].trim();if(!v||v==='--'){entry[c.key]=null;return;}
+          const m=v.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(%|kcal)?$/i);
+          if(!m){bad=true;return;}entry[c.key]=Number(m[1]);
+        });
+        const note= headers.findIndex(h=>/^notes?$/i.test(h.trim()));if(note>=0)entry.note=row[note];
+        if(bad)invalidWeights++;else weightRecords.push(entry);
+      }
+    }
+    const oldWeights=getEntries(),oldMeasures=getMeas();
+    const byDate=new Map(oldWeights.map(e=>[e.date,e]));let weightAdded=0,duplicates=0;
+    weightRecords.forEach(e=>{if(byDate.has(e.date)){duplicates++;return;}byDate.set(e.date,e);weightAdded++;});
     const signature=e=>JSON.stringify(Object.keys(e).filter(k=>k!=='id').sort().map(k=>[k,e[k]]));
-    const seen=new Set(existing.map(signature));let duplicates=0;
-    const added=entries.filter(e=>{const s=signature(e);if(seen.has(s)){duplicates++;return false;}seen.add(s);return true;});
-    if(!added.length){alert('No new measurements to import. '+skipped+' invalid or empty rows; '+duplicates+' duplicates.');return;}
-    if(!confirm('Import '+added.length+' measurement records into '+currentProfile.name+' ('+(metric?'cm':'in')+')?\n'+skipped+' invalid or empty rows and '+duplicates+' duplicates will be skipped. Existing measurements will be kept.'))return;
-    const base=Date.now();added.forEach((e,i)=>e.id=base+i+Math.random());
-    // Write directly so quota failures cannot be reported as successful imports.
-    localStorage.setItem(key,JSON.stringify([...existing,...added]));
-    logSubTab='measures';sl('mt_logSubTab',logSubTab);render();
-    alert('Imported '+added.length+' measurement records. '+skipped+' invalid or empty rows and '+duplicates+' duplicates skipped.');
-  }catch(err){alert('Measurement import failed: '+err.message);}
-};
-
-window.importCSV=function(inp){
-  const file=inp.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
+    const seen=new Set(oldMeasures.map(signature));
+    const added=measurementRecords.filter(e=>{const sig=signature(e);if(seen.has(sig)){duplicates++;return false;}seen.add(sig);return true;});
+    const summary=weightAdded+' weight records and '+added.length+' measurement records';
+    const skipped=(invalidWeights+invalidMeasures)+' invalid or empty records and '+duplicates+' duplicates skipped.';
+    if(!weightAdded&&!added.length){alert('No new data to import. '+skipped);return;}
+    if(!confirm('Detected '+summary+'. Import into '+currentProfile.name+'?\n'+skipped+' Existing records will be kept.'))return;
+    const weightKey=pk('entries'),measKey=pk('meas');
+    const beforeWeights=localStorage.getItem(weightKey),beforeMeasures=localStorage.getItem(measKey);
+    added.forEach((e,i)=>e.id=Date.now()+i+Math.random());
     try{
-      const lines=ev.target.result.trim().split('\n');const results=[];
-      const splitRow=line=>line.replace(/^"|"$/g,'').split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-
-      // Read header row to find real column positions instead of assuming a fixed layout
-      const header=splitRow(lines[0]).map(h=>h.toLowerCase().replace(/"/g,'').trim());
-      const findCol=(...keywords)=>{
-        for(let i=0;i<header.length;i++){
-          if(keywords.some(k=>header[i].includes(k)))return i;
-        }
-        return -1;
-      };
-      let idxTime=findCol('time','date');
-      let idxWeight=findCol('weight');
-      let idxBmi=findCol('bmi');
-      let idxBf=findCol('body fat','fat percentage','fat %','bodyfat');
-      let idxVisceral=findCol('visceral');
-      let idxMuscle=findCol('muscle');
-      let idxBmr=findCol('bmr','basal');
-      // Fall back to the original fixed layout only if the header doesn't look parseable
-      const headerLooksValid=idxTime>=0&&idxWeight>=0;
-      if(!headerLooksValid){
-        idxTime=0;idxWeight=1;idxBmi=2;idxBf=3;idxVisceral=6;idxMuscle=8;idxBmr=12;
-      }
-      // Some exports only state the unit once in the column header (e.g. "Weight(kg)")
-      // rather than on every row value — check the header text as a fallback signal.
-      const headerSaysKg = idxWeight>=0 && /kg/i.test(header[idxWeight]);
-      const headerSaysLb = idxWeight>=0 && /lb/i.test(header[idxWeight]);
-
-      for(let i=1;i<lines.length;i++){
-        const row=splitRow(lines[i]);if(row.length<2)continue;
-        const ts=row[idxTime]?.replace(/"/g,'').trim();
-        const wRawFull=row[idxWeight]?.trim()||'';
-        // Prefer a unit found directly on the value; otherwise fall back to the header's unit
-        let isKg;
-        if(/kg/i.test(wRawFull)) isKg=true;
-        else if(/lb/i.test(wRawFull)) isKg=false;
-        else isKg=headerSaysKg&&!headerSaysLb;
-        const wRaw=wRawFull.replace(/lb|kg/gi,'').trim();
-        const bmiR=row[idxBmi]?.trim();
-        const bfR=row[idxBf]?.replace(/%/g,'').trim();
-        const visR=row[idxVisceral]?.trim();
-        const musR=row[idxMuscle]?.replace(/%/g,'').trim();
-        const bmrR=row[idxBmr]?.replace(/kcal/gi,'').trim();
-        const dt=new Date(ts);if(isNaN(dt))continue;
-        const date=dt.toISOString().split('T')[0];let weight=parseFloat(wRaw);if(isNaN(weight))continue;
-        if(isKg)weight=weight/0.453592; // convert to lbs for internal storage, matching app's storage convention
-        results.push({date,weight:Math.round(weight*10)/10,time:dt.getHours()<12?'morning':'night',bodyFat:bfR&&bfR!=='--'?parseFloat(bfR):null,bmi:bmiR&&bmiR!=='--'?parseFloat(bmiR):null,visceralFat:visR&&visR!=='--'?parseFloat(visR):null,musclePct:musR&&musR!=='--'?parseFloat(musR):null,bmr:bmrR&&bmrR!=='--'?parseInt(bmrR):null,note:'',photo:null,_t:dt.getTime()});
-      }
-      const byDate={};results.forEach(r=>{if(!byDate[r.date]||r._t<byDate[r.date]._t)byDate[r.date]=r;});
-      const parsed=Object.values(byDate).map(({_t,...r})=>r);
-      if(!parsed.length){alert('No data found. Check the file format.');return;}
-      const merged={};[...getEntries(),...parsed].forEach(r=>{merged[r.date]=r;});
-      sl(pk('entries'),Object.values(merged).sort((a,b)=>a.date.localeCompare(b.date)));
-      alert('Imported '+parsed.length+' entries!');render();
-    }catch(err){alert('Import failed. Please check the file.');console.error(err);}
-  };
-  reader.readAsText(file);inp.value='';
+      if(weightAdded)localStorage.setItem(weightKey,JSON.stringify([...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date))));
+      if(added.length)localStorage.setItem(measKey,JSON.stringify([...oldMeasures,...added]));
+    }catch(err){
+      if(beforeWeights===null)localStorage.removeItem(weightKey);else localStorage.setItem(weightKey,beforeWeights);
+      if(beforeMeasures===null)localStorage.removeItem(measKey);else localStorage.setItem(measKey,beforeMeasures);
+      throw err;
+    }
+    render();alert('Imported '+summary+'. '+skipped);
+  }catch(err){alert('CSV import failed: '+err.message);}
 };
 
 
