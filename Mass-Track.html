@@ -212,34 +212,38 @@ const TAILOR_MEASURE_FIELDS=[['neck circumference','Neck Circumference'],['shoul
 const BODY_MEASURE_FIELDS=[['bodyFat','Body Fat'],['bmi','BMI'],['neck circumference','Neck'],['shoulders','Shoulders'],['upper arm left','Upper Arm — Left'],['upper arm right','Upper Arm — Right'],['forearm left','Forearm — Left'],['forearm right','Forearm — Right'],['chest','Chest'],['upper waist','Upper Waist'],['lower waist','Lower Waist'],['hips','Hips'],['thigh left','Thigh — Left'],['thigh right','Thigh — Right'],['calf left','Calf — Left'],['calf right','Calf — Right'],['ankle left','Ankle — Left'],['ankle right','Ankle — Right']];
 let measurementSection='body';
 
-const measurementCalendarState={body:{month:null,date:null},tailoring:{month:null,date:null}};
-function measurementCalendar(records){
-  const state=measurementCalendarState[measurementSection];
-  const dates=[...new Set(records.map(m=>m.date))].sort();
-  if(!state.month)state.month=(dates[dates.length-1]||today()).slice(0,7);
-  const [year,month]=state.month.split('-').map(Number);
-  const first=new Date(year,month-1,1),days=new Date(year,month,0).getDate();
-  const available=new Set(dates);
-  if(state.date&&!available.has(state.date))state.date=null;
-  const monthLabel=first.toLocaleDateString(undefined,{month:'long',year:'numeric'});
-  let cells=Array.from({length:first.getDay()},()=>'<span aria-hidden="true"></span>').join('');
-  for(let day=1;day<=days;day++){
-    const date=state.month+'-'+String(day).padStart(2,'0'),hasData=available.has(date),selected=state.date===date;
-    cells+='<button type="button" class="page-btn'+(selected?' on':'')+'" style="min-width:0;padding:10px 0;'+(!hasData?'opacity:.3;box-shadow:none;': 'font-weight:900;border-color:var(--accent);')+'" '+(!hasData?'disabled':'onclick="selectMeasurementDate(\''+date+'\')"')+' aria-label="'+date+(hasData?', measurements available':', no measurements')+'" aria-pressed="'+selected+'">'+day+(hasData?'<span style="display:block;font-size:9px;line-height:6px;" aria-hidden="true">●</span>':'')+'</button>';
-  }
-  return '<div class="card"><div class="sec">Measurement Calendar</div><div class="row" style="align-items:center;justify-content:space-between;"><button class="page-btn" aria-label="Previous month" onclick="changeMeasurementMonth(-1)">‹</button><div style="font-weight:800;color:var(--text);">'+monthLabel+'</div><button class="page-btn" aria-label="Next month" onclick="changeMeasurementMonth(1)">›</button></div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center;">'+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>'<span style="font-size:10px;color:var(--muted);font-weight:700;padding:5px 0;">'+d+'</span>').join('')+cells+'</div><p style="font-size:12px;color:var(--muted);margin-top:12px;">'+(dates.length?'Select a highlighted date to view its measurements.':'No measurements for this range.')+'</p></div>';
-}
-window.changeMeasurementMonth=function(offset){
-  const state=measurementCalendarState[measurementSection];
-  const [year,month]=state.month.split('-').map(Number);
-  const next=new Date(year,month-1+offset,1);
-  state.month=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0');state.date=null;render();
-};
-window.selectMeasurementDate=function(date){
-  if(!getMeas().some(m=>measurementKind(m)===measurementSection&&m.date===date))return;
-  measurementCalendarState[measurementSection].date=date;render();
-};
 
+const measurementBrowseState={body:{date:null,period:null},tailoring:{date:null,period:null}};
+function measurementBrowseRecords(){
+  return applyRange(getMeas().filter(m=>measurementKind(m)===measurementSection));
+}
+function measurementDateChoices(records){
+  return [...new Set(records.map(m=>m.date))].sort().reverse();
+}
+function measurementDateNavigation(records){
+  const state=measurementBrowseState[measurementSection],dates=measurementDateChoices(records);
+  if(!dates.length){state.date=null;state.period=null;return '<div class="card" style="color:var(--muted);text-align:center;">No measurements for this range.</div>';}
+  if(!dates.includes(state.date)){state.date=dates[0];state.period=null;}
+  const periods=[...new Set(records.filter(m=>m.date===state.date).map(m=>m.period||''))].sort();
+  if(!periods.includes(state.period))state.period=periods.includes('PM')?'PM':periods[0];
+  const index=dates.indexOf(state.date);
+  const options=dates.map(date=>'<option value="'+date+'" '+(date===state.date?'selected':'')+'>'+new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})+'</option>').join('');
+  const periodButtons=periods.length>1?'<div class="mtabs" style="margin:10px 0 0;">'+periods.map(period=>'<button class="mtab '+(period===state.period?'on':'')+'" onclick="selectMeasurementPeriod(\''+period+'\')" aria-pressed="'+(period===state.period)+'">'+(period||'Unspecified')+'</button>').join('')+'</div>':'';
+  return '<div class="card"><div class="sec">Saved Measurements</div><div class="row" style="margin-bottom:0;"><button class="page-btn" aria-label="Previous saved date" onclick="stepMeasurementDate(1)" '+(index===dates.length-1?'disabled style="opacity:.35;"':'')+'>‹</button><select class="inp" aria-label="Saved measurement date" onchange="selectMeasurementDate(this.value)">'+options+'</select><button class="page-btn" aria-label="Next saved date" onclick="stepMeasurementDate(-1)" '+(index===0?'disabled style="opacity:.35;"':'')+'>›</button></div>'+periodButtons+'</div>';
+}
+window.selectMeasurementDate=function(date){
+  if(!measurementDateChoices(measurementBrowseRecords()).includes(date))return;
+  const state=measurementBrowseState[measurementSection];state.date=date;state.period=null;render();
+};
+window.stepMeasurementDate=function(offset){
+  const dates=measurementDateChoices(measurementBrowseRecords()),state=measurementBrowseState[measurementSection];
+  const next=dates[dates.indexOf(state.date)+offset];if(next)window.selectMeasurementDate(next);
+};
+window.selectMeasurementPeriod=function(period){
+  const state=measurementBrowseState[measurementSection];
+  if(!measurementBrowseRecords().some(m=>m.date===state.date&&(m.period||'')===period))return;
+  state.period=period;render();
+};
 function measurementKind(m){return m.kind||(['sleeve length','natural waist','outseam','inseam','bust','back'].some(k=>m[k]!=null)?'tailoring':'body');}
 function measureFields(){return measurementSection==='tailoring'?TAILOR_MEASURE_FIELDS:BODY_MEASURE_FIELDS;}
 function measurementUnit(key){return key==='weight'?wUnit():key==='bodyFat'?'%':key==='bmi'?'':hUnit();}
@@ -802,12 +806,12 @@ function renderLogTab(){
         ${[['body','Body Measurements'],['tailoring','Tailoring']].map(([key,label])=>`<button class="mtab ${measurementSection===key?'on':''}" onclick="measurementSection='${key}';render();">${label}</button>`).join('')}
       </div>
       ${(()=>{
-          const records=applyRange(getMeas().filter(m=>measurementKind(m)===measurementSection));
-          const calendar=measurementCalendar(records);
-          const selectedDate=measurementCalendarState[measurementSection].date;
-          if(!selectedDate)return calendar;
-          const ms=records.filter(m=>m.date===selectedDate).sort((a,b)=>(a.period||'').localeCompare(b.period||'')||(a.id||0)-(b.id||0));
-          return calendar+ms.map(m=>`
+          const records=measurementBrowseRecords();
+          const navigation=measurementDateNavigation(records);
+          const state=measurementBrowseState[measurementSection];
+          if(!state.date)return navigation;
+          const ms=records.filter(m=>m.date===state.date&&(m.period||'')===state.period).sort((a,b)=>(b.id||0)-(a.id||0));
+          return navigation+ms.map(m=>`
             <div class="card">
               <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}${m.period?' · '+measurementEscape(m.period):''}</div>
               <div class="${measurementSection==='tailoring'?'g3':'g2'}" style="margin-bottom:0;">
