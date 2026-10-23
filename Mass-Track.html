@@ -214,7 +214,7 @@ let measurementSection='body';
 function measurementKind(m){return m.kind||(['sleeve length','natural waist','outseam','inseam','bust','back'].some(k=>m[k]!=null)?'tailoring':'body');}
 function measureFields(){return measurementSection==='tailoring'?TAILOR_MEASURE_FIELDS:BODY_MEASURE_FIELDS;}
 function measurementUnit(key){return key==='weight'?wUnit():key==='bodyFat'?'%':key==='bmi'?'':hUnit();}
-function measurementValue(m,key){return key==='weight'?toDisplay(m[key]):m[key];}
+function measurementValue(m,key){const value=key==='weight'?toDisplay(m[key]):m[key];return Number(value).toFixed(1);}
 function measurementLabel(key){return [...BODY_MEASURE_FIELDS,...TAILOR_MEASURE_FIELDS].find(f=>f[0]===key)?.[1]||key;}
 function measurementEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function getMeas(){
@@ -776,7 +776,7 @@ function renderLogTab(){
               <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}${m.scanAt?' · '+measurementEscape(m.scanAt.slice(11,19))+' UTC':''}</div>
               <div class="g3">
                 ${measureFields().filter(([key])=>m[key]!=null).map(([key,label])=>`<div class="chip"><div class="chip-l">${label}</div><div class="chip-v">${measurementValue(m,key)}${measurementUnit(key)}</div></div>`).join('')}
-                ${Object.keys(m).filter(k=>!['date','id',...measureFields().map(f=>f[0])].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${measurementEscape(measurementLabel(k))}</div><div class="chip-v">${m[k]}${hUnit()}</div></div>`).join('')}
+                ${Object.keys(m).filter(k=>!['date','id',...measureFields().map(f=>f[0])].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${measurementEscape(measurementLabel(k))}</div><div class="chip-v">${Number(m[k]).toFixed(1)}${hUnit()}</div></div>`).join('')}
               </div>
               <button class="del" style="margin-top:10px;font-size:12px;padding:4px 10px;" onclick="delMeas(${m.id||0})">Delete</button>
             </div>`).join('');
