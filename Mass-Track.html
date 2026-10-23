@@ -209,7 +209,7 @@ const pendingEdits={};
 function pk(k){return 'mt_'+currentProfile.id+'_'+k;}
 function getEntries(){return gl(pk('entries'),[]);}
 const TAILOR_MEASURE_FIELDS=[['neck circumference','Neck Circumference'],['shoulder width','Shoulder Width'],['sleeve length','Sleeve Length'],['back','Back'],['bust','Bust'],['natural waist','Natural Waist'],['hips','Hip'],['inseam','Inseam'],['outseam','Outseam']];
-const BODY_MEASURE_FIELDS=[['height','Height'],['weight','Weight'],['bodyFat','Body Fat'],['bmi','BMI'],['neck circumference','Neck'],['shoulders','Shoulders'],['upper arm left','Upper Arm — Left'],['upper arm right','Upper Arm — Right'],['forearm left','Forearm — Left'],['forearm right','Forearm — Right'],['chest','Chest'],['upper waist','Upper Waist'],['lower waist','Lower Waist'],['hips','Hips'],['thigh left','Thigh — Left'],['thigh right','Thigh — Right'],['calf left','Calf — Left'],['calf right','Calf — Right'],['ankle left','Ankle — Left'],['ankle right','Ankle — Right']];
+const BODY_MEASURE_FIELDS=[['bodyFat','Body Fat'],['bmi','BMI'],['neck circumference','Neck'],['shoulders','Shoulders'],['upper arm left','Upper Arm — Left'],['upper arm right','Upper Arm — Right'],['forearm left','Forearm — Left'],['forearm right','Forearm — Right'],['chest','Chest'],['upper waist','Upper Waist'],['lower waist','Lower Waist'],['hips','Hips'],['thigh left','Thigh — Left'],['thigh right','Thigh — Right'],['calf left','Calf — Left'],['calf right','Calf — Right'],['ankle left','Ankle — Left'],['ankle right','Ankle — Right']];
 let measurementSection='body';
 
 const measurementCalendarState={body:{month:null,date:null},tailoring:{month:null,date:null}};
@@ -812,7 +812,7 @@ function renderLogTab(){
               <div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px;">${m.date}${m.period?' · '+measurementEscape(m.period):''}</div>
               <div class="g2" style="margin-bottom:0;">
                 ${measureFields().filter(([key])=>m[key]!=null).map(([key,label])=>`<div class="chip" style="${measurementSection==='body'&&/ left$/.test(key)?'grid-column:1;':measurementSection==='body'&&/ right$/.test(key)?'grid-column:2;':''}"><div class="chip-l">${label}</div><div class="chip-v">${measurementValue(m,key)}${measurementUnit(key)}</div></div>`).join('')}
-                ${Object.keys(m).filter(k=>!['date','id',...measureFields().map(f=>f[0])].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${measurementEscape(measurementLabel(k))}</div><div class="chip-v">${Number(m[k]).toFixed(1)}${hUnit()}</div></div>`).join('')}
+                ${Object.keys(m).filter(k=>!['date','id','height','weight',...measureFields().map(f=>f[0])].includes(k)&&typeof m[k]==='number').map(k=>`<div class="chip"><div class="chip-l">${measurementEscape(measurementLabel(k))}</div><div class="chip-v">${Number(m[k]).toFixed(1)}${hUnit()}</div></div>`).join('')}
               </div>
               <button class="del" style="margin-top:10px;font-size:12px;padding:4px 10px;" onclick="delMeas(${m.id||0})">Delete</button>
             </div>`).join('');
