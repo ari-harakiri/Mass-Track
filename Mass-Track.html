@@ -754,11 +754,6 @@ function renderLogTab(){
 
     ${logSubTab==='measures'?`
       <div class="card">
-        <div class="sec">Import Measurements</div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Use Import CSV above for weight data, body measurements, or both. Tailor Mode exports (measurement area name, measurement (in), measurement (cm)) are supported directly. Their date comes from the filename, or you will be asked to enter it. Other CSVs can use Date and one column per measurement. Blank cells are ignored; existing records are kept.</p>
-        <button class="btn btn-sm btn-neu" style="margin-top:10px;" onclick="downloadMeasurementTemplate()">Download sample CSV</button>
-      </div>
-      <div class="card">
         <div class="sec">Log Measurements (${hUnit()})</div>
         <input type="date" id="mDate" class="inp" value="${today()}" style="margin-bottom:8px;">
         <div class="g2" style="margin-bottom:8px;">
